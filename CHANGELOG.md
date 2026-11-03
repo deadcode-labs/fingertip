@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-02
+
 ### Security
 - `run_instruction`'s run log no longer stores the instruction verbatim: every text Jev could type from it (emails, quoted text, tokens with digits) is written as `[texto]`, since it may be a password.
 - More Mac apps are blocked for the MCP: Hyper, Tabby, VS Code Insiders, VSCodium, Windsurf, Zed, Nova, Android Studio and every JetBrains IDE (by `com.jetbrains.` prefix), Raycast, Alfred, Keyboard Maestro, and System Settings, where privacy permissions are granted.
@@ -83,5 +85,6 @@ First release. fingertip lets an agent see and drive an iOS simulator or a macOS
 ### Removed
 - `MaestroDriver`, the XCUITest hierarchy parsing and Maestro as a dependency.
 
-[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/deadcode-labs/fingertip/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/deadcode-labs/fingertip/releases/tag/v0.2.1
