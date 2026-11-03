@@ -7,6 +7,7 @@ import SwiftUI
 
 struct MenuView: View {
     @Environment(\.openSettings) private var openSettings
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         Button("Ajustes…") {
@@ -14,6 +15,11 @@ struct MenuView: View {
             openSettings()
         }
         .keyboardShortcut(",")
+
+        Button("Configuración inicial…") {
+            NSApp.activate(ignoringOtherApps: true)
+            openWindow(id: "onboarding")
+        }
 
         Divider()
 
