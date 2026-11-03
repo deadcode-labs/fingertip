@@ -1,5 +1,9 @@
 # fingertip
 
+[![Made by deadcode labs](https://img.shields.io/badge/made_by-deadcode_labs-111111?style=for-the-badge&labelColor=111111)](https://github.com/deadcode-labs)
+[![Release](https://img.shields.io/github/v/release/deadcode-labs/fingertip?style=for-the-badge&label=release&labelColor=1c1c1c&color=1f6fbf)](https://github.com/deadcode-labs/fingertip/releases/latest)
+[![License](https://img.shields.io/github/license/deadcode-labs/fingertip?style=for-the-badge&labelColor=1c1c1c&color=4c9a1f)](LICENSE)
+
 Lets an agent see and drive an **iOS simulator** or a **macOS app**: it reads the screen through Accessibility, then taps, types, scrolls and takes screenshots — no XCTest runner, no UI test target in the app under test.
 
 It runs as **`fingertip-mcp`**, an MCP server, so Claude Code can do manual verification itself: open your app, walk a flow, check what is on screen. Its `run_instruction` tool hands a whole natural-language instruction to [Jev](https://docs.typesafe.ai) (TypeSafe's System One), which drives the device choosing each step from a closed set of on-screen elements.
