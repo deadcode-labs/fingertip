@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-03
+
 ### Added
 - First-launch onboarding in the Fingertip app: steps that check Xcode's iOS runtimes and sim-use (with a button that installs sim-use through Homebrew), fingertip's registration in Claude Code (flagging one that points at a server that no longer exists) and the Mac permissions. It opens by itself until finished once; the menu reopens it with **Configuración inicial…**.
 
@@ -88,6 +90,7 @@ First release. fingertip lets an agent see and drive an iOS simulator or a macOS
 ### Removed
 - `MaestroDriver`, the XCUITest hierarchy parsing and Maestro as a dependency.
 
-[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/deadcode-labs/fingertip/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/deadcode-labs/fingertip/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/deadcode-labs/fingertip/releases/tag/v0.2.1
