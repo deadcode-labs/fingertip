@@ -79,8 +79,9 @@ nonisolated enum SetupService {
 
     /// Passes when fingertip is registered with a server that exists. One that is
     /// not this app's (a `.build/` binary) is named; a DerivedData build that was
-    /// cleaned fails, since Claude Code can no longer start it.
-    static func claudeRegistration() -> Check {
+    /// cleaned fails, since Claude Code can no longer start it. With a Jev key saved
+    /// in the app, a registration without one fails too: `run_instruction` needs it.
+    static func claudeRegistration(expectsJevKey: Bool) -> Check {
         guard let claude = ClaudeMCPInstaller.resolveClaudeBinary() else {
             return Check(passed: false, detail: "No encontré `claude`. Instalá Claude Code y volvé a verificar.")
         }
@@ -89,12 +90,17 @@ nonisolated enum SetupService {
             return Check(passed: false, detail: "fingertip no está registrado en Claude Code.")
         }
 
-        // Only the command line is read: the output also lists the environment, API key included.
-        let command = output
+        // The output also lists the environment, API key included: only the command line is
+        // read, and the key's line only for whether it is there.
+        let lines = output
             .split(whereSeparator: \.isNewline)
             .map { $0.trimmingCharacters(in: .whitespaces) }
+        let command = lines
             .first { $0.hasPrefix("Command:") }
             .map { $0.dropFirst("Command:".count).trimmingCharacters(in: .whitespaces) } ?? ""
+        if expectsJevKey && !lines.contains(where: { $0.hasPrefix("TYPESAFE_API_KEY=") }) {
+            return Check(passed: false, detail: "Registrado sin la clave de Jev: volvé a registrar para pasársela.")
+        }
         if command == bundledMCPPath {
             return Check(passed: true, detail: "Registrado con el servidor de esta app.")
         }

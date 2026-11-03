@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- An optional Jev step in the onboarding, before Claude Code: it explains that only `run_instruction` uses Jev and takes the API key, saved to the Keychain like Settings → Jev. The Claude Code step now flags a registration without the key when the app has one.
+
 ### Fixed
 - `type_text` and `erase_text` on a Mac password field answered success and changed nothing, since macOS ignores AX writes there. They now post key events to the app, which reach the field with the app in the background and take any Unicode.
+- `jev_missing_api_key` pointed at an Xcode scheme from the removed Jev app; it now points at Fingertip's Settings → Jev and the re-registration, and says the other tools work without the key.
 
 ## [0.3.0] - 2026-11-03
 

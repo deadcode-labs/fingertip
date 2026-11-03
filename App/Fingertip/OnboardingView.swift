@@ -14,12 +14,13 @@ struct OnboardingView: View {
     static let completedKey = "onboardingCompleted"
 
     private enum Step: Int, CaseIterable {
-        case welcome, simulator, claude, mac, done
+        case welcome, simulator, jev, claude, mac, done
     }
 
     @Environment(\.dismissWindow) private var dismissWindow
     @State private var step = Step.welcome
     @State private var usesSimulator = true
+    @State private var apiKey = KeychainStore.load() ?? ""
 
     @State private var runtimes: SetupService.Check?
     @State private var simUse: SetupService.Check?
@@ -36,6 +37,7 @@ struct OnboardingView: View {
                 switch step {
                 case .welcome: welcome
                 case .simulator: simulator
+                case .jev: jev
                 case .claude: claude
                 case .mac: mac
                 case .done: done
@@ -91,6 +93,23 @@ struct OnboardingView: View {
         }
     }
 
+    private var jev: some View {
+        StepPage(symbol: "sparkles", title: "Jev (opcional)") {
+            Text("Normalmente Claude decide cada toque. Con `run_instruction`, Claude le delega una instrucción entera a Jev, que elige los pasos por su cuenta: menos idas y vueltas, pero necesita una clave de API de TypeSafe.")
+            Text("Sin clave, todas las demás tools funcionan igual. Si no tenés una, seguí de largo; podés cargarla después en Ajustes → Jev.")
+                .foregroundStyle(.secondary)
+            SecureField("TYPESAFE_API_KEY", text: $apiKey, prompt: Text("Pegá tu clave"))
+                .textFieldStyle(.roundedBorder)
+            Text("Se guarda en el Llavero y se le pasa a Claude Code al registrar el MCP en el paso siguiente.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+        .onChange(of: apiKey) { _, new in
+            KeychainStore.save(new)
+            registration = nil // the registration check depends on whether there is a key
+        }
+    }
+
     private var claude: some View {
         StepPage(symbol: "terminal", title: "Claude Code") {
             Text("Fingertip se usa desde Claude Code como un servidor MCP. Esta app trae el servidor adentro y lo registra para todos tus proyectos.")
@@ -106,7 +125,8 @@ struct OnboardingView: View {
         }
         .task {
             guard registration == nil else { return }
-            registration = await Task.detached { SetupService.claudeRegistration() }.value
+            let expectsKey = !apiKey.isEmpty
+            registration = await Task.detached { SetupService.claudeRegistration(expectsJevKey: expectsKey) }.value
         }
     }
 
@@ -176,12 +196,12 @@ struct OnboardingView: View {
 
     private func register() {
         registering = true
-        let key = KeychainStore.load() ?? ""
+        let key = apiKey
         Task {
             // `claude mcp add` blocks on a subprocess; keep it off the main actor.
             let installed = await Task.detached { ClaudeMCPInstaller.install(apiKey: key) }.value
             registration = installed.succeeded
-                ? await Task.detached { SetupService.claudeRegistration() }.value
+                ? await Task.detached { SetupService.claudeRegistration(expectsJevKey: !key.isEmpty) }.value
                 : SetupService.Check(passed: false, detail: installed.message)
             registering = false
         }

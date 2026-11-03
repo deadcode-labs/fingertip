@@ -36,7 +36,7 @@ nonisolated enum JevError: FingertipError {
     var errorDescription: String? {
         switch self {
         case .missingAPIKey:
-            "Falta TYPESAFE_API_KEY. En la app va en el scheme: Product → Scheme → Edit Scheme → Run → Arguments → Environment Variables. En fingertip-mcp, al registrarlo: `claude mcp add fingertip -e TYPESAFE_API_KEY=… -- <ruta>/fingertip-mcp`."
+            "Falta TYPESAFE_API_KEY: Jev solo hace falta para `run_instruction`; las demás tools andan sin ella. Cargala en Fingertip → Ajustes → Jev y volvé a registrar el MCP desde Ajustes → General (después `/mcp` en Claude Code). Registrándolo a mano: `claude mcp add fingertip -e TYPESAFE_API_KEY=… -- <ruta>/fingertip-mcp`."
         case .httpError(let status, let body):
             "TypeSafe devolvió \(status): \(body)"
         case .badResponse(let detail):
@@ -294,7 +294,7 @@ actor JevClient {
 
     // MARK: - HTTP
 
-    /// La key vive en el scheme (Run → Environment Variables), nunca en el repo.
+    /// The key comes from the server's environment, set when it is registered; never from the repo.
     private static func apiKey() throws -> String {
         let key = ProcessInfo.processInfo.environment["TYPESAFE_API_KEY"]?
             .trimmingCharacters(in: .whitespacesAndNewlines)
