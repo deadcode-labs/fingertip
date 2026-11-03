@@ -686,13 +686,44 @@ actor MacDriver: ScreenDriver {
     /// cualquier Unicode: acá no existe el límite del teclado US del simulador.
     private func insert(_ text: String) throws {
         let field = try textTarget()
+        if (Self.attribute(field, "AXSubrole") as String?) == "AXSecureTextField" {
+            try typeKeys(text, into: field)
+            return
+        }
         if AXUIElementSetAttributeValue(field, "AXSelectedText" as CFString, text as CFString) == .success { return }
         let current: String = Self.attribute(field, "AXValue") ?? ""
         try Self.set(field, "AXValue", (current + text) as CFString)
     }
 
+    /// A password field takes no AX write: `AXSelectedText` and `AXValue` answer success and
+    /// the field stays empty. Keyboard events posted to the process do reach it, one per
+    /// character carrying its Unicode string, like `submit`'s Return.
+    private func typeKeys(_ text: String, into field: AXUIElement) throws {
+        try postKeys(text.map { (0, Array(String($0).utf16)) }, to: field)
+    }
+
+    /// Each key is a virtual key code and, for text, the UTF-16 it types.
+    private func postKeys(_ keys: [(code: CGKeyCode, text: [UniChar]?)], to field: AXUIElement) throws {
+        try Self.set(field, "AXFocused", true as CFBoolean)
+        guard let app = runningApp() else { throw MacDriverError.notRunning(bundleID) }
+        let source = CGEventSource(stateID: .hidSystemState)
+        for key in keys {
+            for isDown in [true, false] {
+                let event = CGEvent(keyboardEventSource: source, virtualKey: key.code, keyDown: isDown)
+                if let text = key.text {
+                    event?.keyboardSetUnicodeString(stringLength: text.count, unicodeString: text)
+                }
+                event?.postToPid(app.processIdentifier)
+            }
+        }
+    }
+
     private func erase(_ characters: Int) throws {
         let field = try textTarget()
+        if (Self.attribute(field, "AXSubrole") as String?) == "AXSecureTextField" {
+            try postKeys(Array(repeating: (0x33, nil), count: characters), to: field) // 0x33 = Delete
+            return
+        }
         let current: String = Self.attribute(field, "AXValue") ?? ""
         try Self.set(field, "AXValue", String(current.dropLast(characters)) as CFString)
     }

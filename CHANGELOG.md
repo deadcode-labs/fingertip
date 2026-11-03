@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `type_text` and `erase_text` on a Mac password field answered success and changed nothing, since macOS ignores AX writes there. They now post key events to the app, which reach the field with the app in the background and take any Unicode.
+
 ## [0.3.0] - 2026-11-03
 
 ### Added
