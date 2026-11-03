@@ -302,23 +302,32 @@ final class Session {
         "com.apple.Terminal", "com.googlecode.iterm2", "com.mitchellh.ghostty",
         "dev.warp.Warp-Stable", "dev.warp.Warp", "net.kovidgoyal.kitty",
         "org.alacritty", "io.alacritty", "com.github.wez.wezterm",
-        // Editores con terminal integrada
-        "com.microsoft.VSCode", "com.todesktop.230313mzl4w4u92",
+        "co.zeit.hyper", "org.tabby",
+        // Editors with an integrated terminal (Cursor is com.todesktop.…; JetBrains IDEs go by prefix)
+        "com.microsoft.VSCode", "com.microsoft.VSCodeInsiders", "com.vscodium",
+        "com.todesktop.230313mzl4w4u92", "com.exafunction.windsurf",
+        "dev.zed.Zed", "dev.zed.Zed-Preview", "com.panic.Nova", "com.google.android.studio",
         // Claude
         "com.anthropic.claudefordesktop",
         // Scripts y automatización
         "com.apple.ScriptEditor2", "com.apple.Automator", "com.apple.shortcuts",
+        "com.raycast.macos", "com.runningwithcrayons.Alfred", "com.stairways.keyboardmaestro.editor",
+        // System Settings: privacy permissions and security settings
+        "com.apple.systempreferences",
         // Contraseñas
         "com.apple.keychainaccess", "com.apple.Passwords", "com.1password.1password",
         "com.agilebits.onepassword7", "com.bitwarden.desktop", "com.lastpass.LastPass"
     ].map { $0.lowercased() })
+
+    private static let blockedPrefixes = ["com.jetbrains."]
 
     /// Lo decide el usuario al registrar el servidor, no Claude: un argumento de
     /// la tool lo podría pasar la misma instrucción inyectada que se quiere frenar.
     private static let isUnrestricted = ProcessInfo.processInfo.environment["FINGERTIP_UNRESTRICTED"] == "1"
 
     private static func isBlocked(_ bundleID: String) -> Bool {
-        !isUnrestricted && blockedApps.contains(bundleID.lowercased())
+        let id = bundleID.lowercased()
+        return !isUnrestricted && (blockedApps.contains(id) || blockedPrefixes.contains { id.hasPrefix($0) })
     }
 
     private static func blockedError(_ bundleID: String) -> ToolResult {
