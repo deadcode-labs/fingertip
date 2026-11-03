@@ -171,7 +171,7 @@ public nonisolated enum DeviceAction: Sendable {
     }
 }
 
-actor SimUse {
+public actor SimUse {
     /// Una app lanzada desde Finder o Xcode hereda un PATH mínimo que no
     /// incluye los prefijos de Homebrew, así que no alcanza con buscar en PATH.
     private static let fallbackDirectories = ["/opt/homebrew/bin", "/usr/local/bin"]
@@ -196,15 +196,17 @@ actor SimUse {
 
     private func locate() throws -> URL {
         if let cachedBinary { return cachedBinary }
+        guard let found = Self.installedBinary() else { throw SimUseError.notInstalled }
+        cachedBinary = found
+        return found
+    }
 
+    /// Searches without caching, so the app's onboarding sees an install that just finished.
+    public nonisolated static func installedBinary() -> URL? {
         let fromPath = (ProcessInfo.processInfo.environment["PATH"] ?? "").split(separator: ":").map(String.init)
-        for directory in fromPath + Self.fallbackDirectories {
-            let candidate = URL(filePath: directory).appending(path: "sim-use")
-            guard FileManager.default.isExecutableFile(atPath: candidate.path) else { continue }
-            cachedBinary = candidate
-            return candidate
-        }
-        throw SimUseError.notInstalled
+        return (fromPath + fallbackDirectories)
+            .map { URL(filePath: $0).appending(path: "sim-use") }
+            .first { FileManager.default.isExecutableFile(atPath: $0.path) }
     }
 
     // MARK: - Lectura de pantalla

@@ -23,7 +23,7 @@ It runs as **`fingertip-mcp`**, an MCP server, so Claude Code can do manual veri
 
 ### With the Fingertip app
 
-Download `Fingertip.dmg` from the [latest release](https://github.com/deadcode-labs/fingertip/releases/latest), drag Fingertip to Applications and open it. It lives in the menu bar: in **Ajustes… → Claude Code → Instalar / actualizar** it registers the bundled `fingertip-mcp` in Claude Code at user scope. Then reconnect with `/mcp`.
+Download `Fingertip.dmg` from the [latest release](https://github.com/deadcode-labs/fingertip/releases/latest), drag Fingertip to Applications and open it. The first launch walks through setup: it checks Xcode and sim-use (and installs sim-use through Homebrew), registers the MCP in Claude Code and points at the Mac permissions. The app lives in the menu bar: in **Ajustes… → Claude Code → Instalar / actualizar** it registers the bundled `fingertip-mcp` in Claude Code at user scope. Then reconnect with `/mcp`.
 
 While it runs, the app shows what the agent is doing: an edge indicator, a status toast, and a ghost pointer over the element a Mac action touches (your real cursor never moves).
 

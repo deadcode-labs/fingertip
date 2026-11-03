@@ -46,7 +46,7 @@ nonisolated enum ClaudeMCPInstaller {
     /// The native installer puts `claude` in ~/.local/bin and adds that to PATH in .zshrc,
     /// which a login shell (`-l`) does not read; so the usual places are checked first, and
     /// an interactive shell last. Its .zshrc may print, so only the last line counts.
-    private static func resolveClaudeBinary() -> String? {
+    static func resolveClaudeBinary() -> String? {
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         let known = ["\(home)/.local/bin/claude", "/opt/homebrew/bin/claude", "/usr/local/bin/claude"]
         if let found = known.first(where: FileManager.default.isExecutableFile(atPath:)) { return found }
@@ -62,7 +62,7 @@ nonisolated enum ClaudeMCPInstaller {
         return nil
     }
 
-    private static func run(_ executable: URL, _ arguments: [String]) -> (status: Int32, output: String) {
+    static func run(_ executable: URL, _ arguments: [String]) -> (status: Int32, output: String) {
         let process = Process()
         process.executableURL = executable
         process.arguments = arguments

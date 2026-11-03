@@ -20,5 +20,13 @@ struct FingertipApp: App {
         Settings {
             SettingsView()
         }
+
+        Window("Configuración inicial", id: "onboarding") {
+            OnboardingView()
+        }
+        .windowResizability(.contentSize)
+        .defaultLaunchBehavior(
+            UserDefaults.standard.bool(forKey: OnboardingView.completedKey) ? .suppressed : .presented
+        )
     }
 }

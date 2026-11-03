@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- First-launch onboarding in the Fingertip app: steps that check Xcode's iOS runtimes and sim-use (with a button that installs sim-use through Homebrew), fingertip's registration in Claude Code (flagging one that points at a server that no longer exists) and the Mac permissions. It opens by itself until finished once; the menu reopens it with **Configuración inicial…**.
+
 ## [0.2.2] - 2026-11-02
 
 ### Security
