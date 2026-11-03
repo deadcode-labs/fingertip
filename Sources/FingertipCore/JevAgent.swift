@@ -139,7 +139,7 @@ public final class JevAgent {
         crashed = false
         let bundleID = appUnderTest
         let relaunched = bundleID.isEmpty ? false : await relaunch(bundleID)
-        await log.append(["event": "run", "instruction": instruction, "bundle_id": bundleID, "relaunched": relaunched])
+        await log.append(["event": "run", "instruction": JevClient.redactingTextCandidates(in: instruction), "bundle_id": bundleID, "relaunched": relaunched])
         if !bundleID.isEmpty && !relaunched {
             await log.append(["event": "end", "steps": 0, "reason": "error", "error": errorMessage ?? ""])
             return

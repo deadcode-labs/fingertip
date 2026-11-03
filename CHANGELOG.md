@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- `run_instruction`'s run log no longer stores the instruction verbatim: every text Jev could type from it (emails, quoted text, tokens with digits) is written as `[texto]`, since it may be a password.
+- More Mac apps are blocked for the MCP: Hyper, Tabby, VS Code Insiders, VSCodium, Windsurf, Zed, Nova, Android Studio and every JetBrains IDE (by `com.jetbrains.` prefix), Raycast, Alfred, Keyboard Maestro, and System Settings, where privacy permissions are granted.
+
 ## [0.2.1] - 2026-11-02
 
 ### Changed

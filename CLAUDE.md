@@ -29,7 +29,7 @@ Reference, read when touching that area:
 - Swift 6 language mode, `MainActor` default isolation and approachable concurrency, in both the app and the package, so code moves between them unchanged. Process wrappers and pollers cross isolation boundaries — make them actors from the start.
 - Do not work around `sim-use type`'s US-keyboard limit with `paste`: on this machine `paste` returns ok and writes nothing.
 - Never signal a Mac app under the debugger (`MacDriver` refuses with `underDebugger`); Xcode leaves it paused and every AX read hangs.
-- The MCP blocks sensitive Mac apps (terminals, editors with terminals, password managers…). Only the user lifts it, with `FINGERTIP_UNRESTRICTED=1` at registration — never add a tool argument for it.
+- The MCP blocks sensitive Mac apps (terminals, editors with terminals, System Settings, password managers…). Only the user lifts it, with `FINGERTIP_UNRESTRICTED=1` at registration — never add a tool argument for it.
 - iOS Simulator and macOS apps on this Mac only — no Android, no physical devices.
 
 ## Language

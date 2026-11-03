@@ -119,6 +119,15 @@ actor JevClient {
         return found
     }
 
+    /// The instruction with every text Jev could type replaced, for the run log on disk:
+    /// those texts are the ones that may be a password. Longest first, so a candidate
+    /// inside another one doesn't break it.
+    static func redactingTextCandidates(in instruction: String) -> String {
+        textCandidates(in: instruction)
+            .sorted { $0.count > $1.count }
+            .reduce(instruction) { $0.replacingOccurrences(of: $1, with: "[texto]") }
+    }
+
     /// Una sola request con las preguntas del paso: qué tocar, si ya terminamos y,
     /// cuando la instrucción trae algún texto, cuál escribir.
     /// With `regions`, the screen is too dense to list: Jev picks a region to look

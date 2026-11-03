@@ -54,7 +54,7 @@ After changing the package, rebuild in release and reconnect the server (`/mcp` 
 
 ### Safety
 
-Everything fingertip reads off a screen reaches the model as text, so an instruction hidden in a web page or an email could try to steer it. By default the MCP refuses to drive terminals, editors with integrated terminals, Claude itself, automation tools and password managers. Only you can lift that, when registering the server:
+Everything fingertip reads off a screen reaches the model as text, so an instruction hidden in a web page or an email could try to steer it. By default the MCP refuses to drive terminals, editors with integrated terminals, Claude itself, automation tools and launchers, System Settings and password managers. Only you can lift that, when registering the server:
 
 ```bash
 claude mcp add --scope user fingertip -e FINGERTIP_UNRESTRICTED=1 -- "$PWD/.build/release/fingertip-mcp"
