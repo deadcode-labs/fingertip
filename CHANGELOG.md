@@ -8,10 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- "Modo dios" switch in the app's Settings → General: re-registers the MCP with `FINGERTIP_UNRESTRICTED=1` so it can drive the blocked apps, after an alert that lists what that exposes. The menu-bar menu shows a warning while it is on, and "Instalar / actualizar" and the onboarding keep the chosen value.
 - Docs for using `fingertip-mcp` from MCP clients other than Claude Code: the plain stdio command, a Codex `config.toml` and an `mcpServers` JSON example, and what differs outside Claude Code (manual registration, permissions on the client's process, no `Listo` in the toast without the Stop hook). Verified with Codex CLI on a Mac app.
 
 ### Changed
+- Fingertip.app (`com.maxward.fingertip`) is blocked for the MCP: its Settings has the switch that lifts the block, so an injected instruction could otherwise turn it on.
 - The Codex and ChatGPT desktop apps (`com.openai.codex`, `com.openai.chat`) are blocked for the MCP, like Claude's: another agent's app takes typed text as instructions with its own permissions.
+
+### Fixed
+- Registering from the app no longer drops the Jev key already in the registration when the app's Keychain has none.
 
 ## [0.4.0] - 2026-11-04
 

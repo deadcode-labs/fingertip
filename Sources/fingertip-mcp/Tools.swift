@@ -329,7 +329,9 @@ final class Session {
         "com.apple.systempreferences",
         // Contraseñas
         "com.apple.keychainaccess", "com.apple.Passwords", "com.1password.1password",
-        "com.agilebits.onepassword7", "com.bitwarden.desktop", "com.lastpass.LastPass"
+        "com.agilebits.onepassword7", "com.bitwarden.desktop", "com.lastpass.LastPass",
+        // Fingertip itself: its Settings has the switch that lifts this block
+        "com.maxward.fingertip"
     ].map { $0.lowercased() })
 
     private static let blockedPrefixes = ["com.jetbrains."]
@@ -346,7 +348,7 @@ final class Session {
     private static func blockedError(_ bundleID: String) -> ToolResult {
         .error(ToolError.blockedApp("""
         \(bundleID) está bloqueada: escribir en ella puede correr comandos o exponer secretos. \
-        Solo el usuario puede liberarla, registrando el servidor con `-e FINGERTIP_UNRESTRICTED=1`.
+        Solo el usuario puede liberarla, con el modo dios en los ajustes de Fingertip o registrando el servidor con `-e FINGERTIP_UNRESTRICTED=1`.
         """))
     }
 

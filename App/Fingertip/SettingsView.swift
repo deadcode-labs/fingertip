@@ -78,6 +78,8 @@ private struct GeneralPane: View {
     let saveError: String?
     @State private var installResult: ClaudeMCPInstaller.Result?
     @State private var installing = false
+    @AppStorage(ClaudeMCPInstaller.unrestrictedKey) private var unrestricted = false
+    @State private var confirmingUnrestricted = false
 
     private var mcpPath: String {
         Bundle.main.bundleURL.appending(path: "Contents/Resources/fingertip-mcp").path
@@ -110,6 +112,36 @@ private struct GeneralPane: View {
                 Text("Registra fingertip en Claude Code para todos tus proyectos. Después reconectá con `/mcp`.")
             }
 
+            Section {
+                Toggle("Modo dios: permitir apps bloqueadas", isOn: Binding(
+                    get: { unrestricted },
+                    set: { on in
+                        if on {
+                            confirmingUnrestricted = true
+                        } else {
+                            setUnrestricted(false)
+                        }
+                    }
+                ))
+                .disabled(installing)
+                if unrestricted {
+                    Label("Activo en todas las sesiones de Claude Code hasta que lo apagues.",
+                          systemImage: "exclamationmark.shield.fill")
+                        .foregroundStyle(.red)
+                        .font(.callout)
+                }
+            } header: {
+                Text("Seguridad")
+            } footer: {
+                Text("Por defecto el MCP se niega a manejar terminales, editores con terminal, otros agentes, herramientas de automatización, Ajustes del Sistema y gestores de contraseñas. Cambiarlo vuelve a registrar el servidor; después reconectá con `/mcp`.")
+            }
+            .alert("¿Activar el modo dios?", isPresented: $confirmingUnrestricted) {
+                Button("Activar", role: .destructive) { setUnrestricted(true) }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text(Self.unrestrictedWarning)
+            }
+
             Section("Overlay") {
                 LabeledContent("Puntero y estado") {
                     Text("Se muestran mientras esta app esté abierta")
@@ -135,14 +167,39 @@ private struct GeneralPane: View {
         }
     }
 
-    private func install() {
+    private static let unrestrictedWarning = """
+    Claude va a poder conectarse y escribir en apps que hoy están bloqueadas: Terminal, iTerm y otras terminales; VS Code, Cursor, Zed, JetBrains y otros editores con terminal; las apps de Claude, Codex y ChatGPT; Script Editor, Automator, Atajos, Raycast y Alfred; esta misma app; Ajustes del Sistema; Acceso a Llaveros, Contraseñas, 1Password y otros gestores.
+
+    Qué implica:
+    • Todo lo que fingertip lee de la pantalla le llega a Claude como texto. Una instrucción escondida en una web, un mail o un documento puede llevarlo a abrir una terminal y correr un comando con tus permisos: borrar archivos, subir tus datos, instalar algo.
+    • Las contraseñas, tokens y claves que se vean en pantalla pasan a la conversación.
+    • Puede cambiar permisos de privacidad y seguridad en Ajustes del Sistema.
+    • Puede darle órdenes a otros agentes, que actúan con sus propios permisos.
+    • Vale para todos tus proyectos y sesiones de Claude Code, no solo para la tarea de ahora, hasta que lo apagues.
+
+    Para un uso puntual es más seguro dejarlo apagado y configurar Claude Code para que te pida permiso en cada `connect`.
+    """
+
+    /// Re-registers the server with the new value; on failure the switch goes back,
+    /// so it never shows a mode the registration does not have.
+    private func setUnrestricted(_ on: Bool) {
+        let previous = unrestricted
+        unrestricted = on
+        install { succeeded in
+            if !succeeded { unrestricted = previous }
+        }
+    }
+
+    private func install(completion: @escaping (Bool) -> Void = { _ in }) {
         installing = true
         let key = apiKey
+        let unrestricted = unrestricted
         Task {
             // `claude mcp add` blocks on a subprocess; keep it off the main actor.
-            let result = await Task.detached { ClaudeMCPInstaller.install(apiKey: key) }.value
+            let result = await Task.detached { ClaudeMCPInstaller.install(apiKey: key, unrestricted: unrestricted) }.value
             installResult = result
             installing = false
+            completion(result.succeeded)
         }
     }
 }
