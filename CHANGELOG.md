@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `bring_to_front` brings a window of the connected Mac app to the front and chooses it, switching to its desktop when it is on another one (through the app's Window menu). It is off by default and runs only when Settings → General → Ventanas allows it; off, it fails with `bring_to_front_disabled`. `window_on_other_space` now points at it.
 - An optional Jev step in the onboarding, before Claude Code: it explains that only `run_instruction` uses Jev and takes the API key, saved to the Keychain like Settings → Jev. The Claude Code step now flags a registration without the key when the app has one.
 
 ### Fixed

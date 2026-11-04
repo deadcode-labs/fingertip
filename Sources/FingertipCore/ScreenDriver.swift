@@ -39,6 +39,9 @@ public nonisolated protocol ScreenDriver: Sendable {
     func listWindows() async throws -> [WindowInfo]
     /// Reads and actions go to this window from now on, until it closes or the app relaunches.
     func chooseWindow(number: Int) async throws
+    /// Brings `window` (else the chosen or only one) to the front, switching Space if needed,
+    /// and chooses it. Nothing on the simulator.
+    func bringToFront(window: Int?) async throws
     /// PNG de lo que se ve: la pantalla del simulador o la ventana de la app.
     func screenshot() async throws -> Data
     /// Starts a video of the device (the simulator screen, or the app's window) into `url`.
@@ -61,6 +64,7 @@ public nonisolated extension ScreenDriver {
     func currentScreenOrigin() async -> CGPoint? { nil }
     func listWindows() async throws -> [WindowInfo] { [] }
     func chooseWindow(number: Int) async throws {}
+    func bringToFront(window: Int?) async throws {}
 }
 
 public nonisolated struct SimulatorDriver: ScreenDriver {

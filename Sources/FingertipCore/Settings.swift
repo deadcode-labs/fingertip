@@ -19,12 +19,18 @@ public nonisolated struct FingertipSettings: Codable, Equatable, Sendable {
     public var screenshotsDirectory: URL?
     /// Where the MCP `stop_recording` leaves the `.mov`. `nil` uses `$TMPDIR/fingertip-mcp/recordings`.
     public var recordingsDirectory: URL?
+    /// Whether the MCP `bring_to_front` tool may run. It activates the app and can switch
+    /// the desktop the user is looking at, so it is off until the user turns it on. Optional
+    /// so a settings file written before it decodes; `nil` is off.
+    public var allowsBringToFront: Bool?
 
     public nonisolated init(runsDirectory: URL? = nil, screenshotsDirectory: URL? = nil, recordingsDirectory: URL? = nil) {
         self.runsDirectory = runsDirectory
         self.screenshotsDirectory = screenshotsDirectory
         self.recordingsDirectory = recordingsDirectory
     }
+
+    public var bringToFrontEnabled: Bool { allowsBringToFront ?? false }
 
     /// Named after the removed Jev app, where runs were first logged; kept so earlier runs stay
     /// in the same folder.

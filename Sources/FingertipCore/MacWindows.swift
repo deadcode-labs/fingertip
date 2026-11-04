@@ -118,6 +118,81 @@ extension MacDriver {
         focusedText = nil
     }
 
+    /// Brings a window of the app to the front and chooses it: `number`, else the chosen one,
+    /// else the one a reading would take (so with several and none chosen, `ambiguous_window`).
+    ///
+    /// A window on a Space on screen is raised and the app activated. One on another Space is
+    /// focused through the app's Window menu, which makes macOS switch to its Space: measured
+    /// on Chrome, AX listed it again 491 ms after the press. Activating the app and raising
+    /// the window does not switch: activation goes to the app's window on the current Space.
+    /// An app with no item for it is only activated, which switches when it has no window here.
+    func bringToFront(window requested: Int?) async throws {
+        guard let app = runningApp() else { throw MacDriverError.notRunning(bundleID) }
+        let root = AXUIElementCreateApplication(app.processIdentifier)
+        AXUIElementSetMessagingTimeout(root, 2)
+        let windows: [AXUIElement] = Self.attribute(root, "AXWindows") ?? []
+        let number: CGWindowID
+        if let requested {
+            number = CGWindowID(requested)
+        } else if let chosen = chosenWindow {
+            number = chosen.number
+        } else {
+            guard let target = Self.windowNumber(try targetWindow(root: root, app: app)) else { throw MacDriverError.noWindow(bundleID) }
+            number = target
+        }
+
+        let caption: String
+        if let window = windows.first(where: { Self.windowNumber($0) == number }) {
+            caption = "#\(number) «\(Self.attribute(window, "AXTitle") ?? "")»"
+            app.activate()
+            AXUIElementPerformAction(window, kAXRaiseAction as CFString)
+            AXUIElementSetAttributeValue(window, "AXMain" as CFString, kCFBooleanTrue)
+        } else {
+            let elsewhere = otherSpaceWindows(app: app, listed: windows, focused: nil).first { $0.number == Int(number) }
+            guard let title = elsewhere?.title
+                    ?? Self.reachable(number, windows: windows, root: root).flatMap({ Self.attribute($0, "AXTitle") })
+            else { throw MacDriverError.unknownWindow(Int(number)) }
+            caption = "#\(number) «\(title)»"
+            app.activate()
+            if let item = Self.windowMenuItem(root: root, title: title) {
+                AXUIElementPerformAction(item, kAXPressAction as CFString)
+            }
+        }
+
+        let deadline = ContinuousClock.now + .seconds(2)
+        while !Self.isInFront(number, root: root) {
+            guard ContinuousClock.now < deadline else { throw MacDriverError.notBroughtForward(caption) }
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+        // The window can report in while the Space animation is still ending.
+        try? await Task.sleep(for: .milliseconds(100))
+        try await chooseWindow(number: Int(number))
+    }
+
+    /// The app is frontmost, AX lists the window (so it is on a Space on screen) and it is the
+    /// app's main or focused one (focused alone would miss a window with a sheet up).
+    private static func isInFront(_ number: CGWindowID, root: AXUIElement) -> Bool {
+        // Asked of the app: the system-wide `AXFocusedApplication` reads back nil from the MCP.
+        guard attribute(root, "AXFrontmost") == true else { return false }
+        let windows: [AXUIElement] = attribute(root, "AXWindows") ?? []
+        guard windows.contains(where: { windowNumber($0) == number }) else { return false }
+        return ["AXMainWindow", "AXFocusedWindow"].contains { name in
+            (attribute(root, name) as AXUIElement?).flatMap(windowNumber) == number
+        }
+    }
+
+    /// The window's item in the app's Window menu. AppKit puts that menu just before Help,
+    /// the last one, so it is found by position and not by a name that changes with the
+    /// app's language. The item must carry the window's exact title.
+    private static func windowMenuItem(root: AXUIElement, title: String) -> AXUIElement? {
+        guard let bar: AXUIElement = attribute(root, "AXMenuBar"),
+              let items: [AXUIElement] = attribute(bar, "AXChildren"), items.count >= 2,
+              let menu = (attribute(items[items.count - 2], "AXChildren") as [AXUIElement]?)?.first,
+              let entries: [AXUIElement] = attribute(menu, "AXChildren")
+        else { return nil }
+        return entries.first { (attribute($0, "AXTitle") as String?) == title }
+    }
+
     /// The AX window with that number: listed, or the app's focused or main window, which AX
     /// still hands out when it sits on another Space.
     private static func reachable(_ number: CGWindowID, windows: [AXUIElement], root: AXUIElement) -> AXUIElement? {

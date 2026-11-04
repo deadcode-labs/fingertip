@@ -52,6 +52,8 @@ nonisolated enum MacDriverError: FingertipError {
     case windowOnOtherSpace(WindowInfo)
     /// The app never ended up under the point, so no click was sent.
     case notClickable(String)
+    /// `bring_to_front` asked for the window and it did not end up in front within 2 s.
+    case notBroughtForward(String)
 
     var code: String {
         switch self {
@@ -80,6 +82,7 @@ nonisolated enum MacDriverError: FingertipError {
         case .windowGone: "window_gone"
         case .windowOnOtherSpace: "window_on_other_space"
         case .notClickable: "not_clickable"
+        case .notBroughtForward: "not_brought_forward"
         }
     }
 
@@ -148,7 +151,9 @@ nonisolated enum MacDriverError: FingertipError {
         case .notClickable(let name):
             "No hice el clic real: la ventana de \(name) no quedó al frente en ese punto en 2 s (otra ventana la tapa, o está en otro Space). No toqué nada; traela al frente y probá de nuevo."
         case .windowOnOtherSpace(let window):
-            "La ventana \(window.caption) está en otro escritorio y desde acá Accesibilidad no la alcanza. Traela a este escritorio (o pasá a ese) y volvé a leer."
+            "La ventana \(window.caption) está en otro escritorio y desde acá Accesibilidad no la alcanza. Traela con `bring_to_front` (si está permitido en Fingertip → Ajustes → General), o pasá a ese escritorio y volvé a leer."
+        case .notBroughtForward(let window):
+            "Pedí traer al frente la ventana \(window) y en 2 s no quedó adelante (la app no la tiene en su menú Ventana, o tiene otra con el mismo título). Pasá a su escritorio a mano y volvé a leer."
         case .windowGone(let detail):
             "La ventana elegida ya no está (\(detail)). Elegí otra con `list_windows`."
         }
