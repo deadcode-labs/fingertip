@@ -1,6 +1,6 @@
 # fingertip-mcp
 
-`fingertip-mcp` lets Claude Code do manual verification itself: read the screen, tap, type, scroll, screenshot, relaunch — on a simulator or a Mac app, through the same `ScreenInspector` / `ScreenDriver` the app uses. Claude is the one deciding here; Jev only comes in through `run_instruction`.
+`fingertip-mcp` lets an agent — Claude Code, or any MCP client — do manual verification itself: read the screen, tap, type, scroll, screenshot, relaunch — on a simulator or a Mac app, through the same `ScreenInspector` / `ScreenDriver` the app uses. Claude is the one deciding here; Jev only comes in through `run_instruction`.
 
 Tools: `list_targets`, `connect` (`udid` or `bundle_id` [+ `app_path`]), `read_screen` (`full` for uncut texts, `skeleton` for region counts, `region` for one region, `window` to choose a Mac window), `list_windows`, `bring_to_front` (`window`), `wait_for` (`text` [+ `tap` / `gone`, `timeout`]), `tap` (`alias` as `L:N`, or `x`,`y`), `select` (`alias`, `option`), `set_value` (`alias`, `value`), `toggle` (`alias`), `type_text`, `erase_text`, `submit` (Return in the focused field), `scroll`, `swipe`, `press_button`, `screenshot`, `start_recording` / `stop_recording`, `relaunch_app`, `terminate_app`, `run_instruction` (delegates a whole run to `JevAgent`, writes the usual JSONL + screenshots).
 
@@ -20,7 +20,7 @@ Tools: `list_targets`, `connect` (`udid` or `bundle_id` [+ `app_path`]), `read_s
 - **Screenshots**: inline as JPEG with the long side at 1280 px, full PNG in the folder chosen in the Fingertip app (Settings → Capturas), `$TMPDIR/fingertip-mcp/` by default, with its path in the reply. The setting is read on every call.
 - **Recording**: `start_recording` / `stop_recording` produce a `.mov` (h264, no audio) in the folder chosen in the Fingertip app (Settings → Capturas → Grabaciones), `$TMPDIR/fingertip-mcp/recordings/` by default, with its path in the reply. One at a time per driver: a second start is `already_recording`, a stop with none is `not_recording`. The simulator goes through `simctl io recordVideo`, which only emits frames when the screen changes, so a still screen at the end is not in the duration. A Mac app records its window with `SCRecordingOutput` (at the window's display scale). `disconnect` (also the one `connect` does when switching devices, which names the closed file in its reply), closing the server (stdin EOF) and SIGTERM/SIGINT/SIGHUP stop a recording so the file is closed; a SIGKILL of the server cannot.
 - No MCP SDK: the needed surface is four methods (`initialize`, `tools/list`, `tools/call`, `ping`), and the binary keeps zero dependencies.
-- **Permissions** for Mac apps belong to the *responsible* process — the terminal running Claude Code, not `fingertip-mcp`. The simulator needs none.
+- **Permissions** for Mac apps belong to the *responsible* process — the terminal running Claude Code (or whichever client launched the server), not `fingertip-mcp`. The simulator needs none.
 - **Sensitive Mac apps are blocked by default.** Everything the server reads off a screen reaches Claude as text, so an instruction hidden in a web page or an email could steer it into connecting to a terminal and typing a command. `connect`, `relaunch_app`, `terminate_app` and `run_instruction` refuse terminals, editors with a terminal (VS Code and its forks, Cursor, Windsurf, Zed, Nova, JetBrains IDEs), Claude, Script Editor / Automator / Shortcuts and launchers that run scripts, System Settings, and password managers (`Session.blockedApps`, plus the `com.jetbrains.` prefix); `list_targets` marks them `bloqueada`. Only the user lifts it, by registering the server with `-e FINGERTIP_UNRESTRICTED=1`. Never as a tool argument: the same injected instruction could pass it. For a one-off, set `mcp__fingertip__connect` to ask in Claude Code's permissions.
 - **Do not drive the same simulator from the app and the MCP at once**: sim-use keeps one `@N` cache per UDID on disk, and each side's `ui` overwrites the other's.
 - `run_instruction` needs `TYPESAFE_API_KEY` in the server's environment (`claude mcp add … -e TYPESAFE_API_KEY=…`, or exported in the shell that starts Claude Code).
@@ -35,6 +35,34 @@ claude mcp add --scope user fingertip -- "$PWD/.build/release/fingertip-mcp"
 ```
 
 Rebuild in release after changing the package; Claude Code picks the new binary up on its next session (or `/mcp` → reconnect).
+
+### Other MCP clients
+
+The server is plain MCP over stdio (`initialize`, `tools/list`, `tools/call`, `ping`), so any client that launches a local stdio server can use it. The command is the binary with no arguments: `/Applications/Fingertip.app/Contents/Resources/fingertip-mcp` from the app, or `.build/release/fingertip-mcp` from source. `FINGERTIP_UNRESTRICTED` and `TYPESAFE_API_KEY` go in the client's `env` for the server.
+
+Codex CLI (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.fingertip]
+command = "/Applications/Fingertip.app/Contents/Resources/fingertip-mcp"
+default_tools_approval_mode = "approve"   # optional: without it every call asks
+```
+
+Clients that use the common `mcpServers` JSON (Cursor, Claude Desktop, Gemini CLI, VS Code with its own `servers` key):
+
+```json
+{ "mcpServers": { "fingertip": { "command": "/Applications/Fingertip.app/Contents/Resources/fingertip-mcp" } } }
+```
+
+What changes outside Claude Code:
+
+- **Registration is by hand.** The Fingertip app only registers the server in Claude Code.
+- **Mac permissions** go to the client's process: the terminal that runs a CLI client, or the client app itself (Cursor, Claude Desktop). The simulator needs none.
+- **The status toast has no `Listo`.** The end of a turn comes from a Claude Code `Stop` hook; without it the toast fades 45 s after the last event. The edge indicator and the pointer work the same.
+- **Blocked apps** stay blocked, and the one-off way around it is the client's own approval for `connect`, not Claude Code's permissions.
+- Some error texts still name Claude Code (`/mcp`, `claude mcp add`, "la terminal de Claude Code"); the fix they describe applies to any client.
+
+Verified on 2026-11-04 with Codex CLI 0.166.0 against `.build/release/fingertip-mcp`: `list_targets`, `connect` to Calculator, `read_screen`, and two `tap`s by alias (the field went 5 → 57 → 0, `Entrega: AXPress entregado`), with the permissions of the terminal running Codex. Not verified: the simulator through another client (`connect` failed here with `sim_use_failed` also over raw JSON-RPC, so it was the simulator, not the client), and Cursor, Claude Desktop and Gemini CLI.
 
 ## Status toast and the Stop hook
 

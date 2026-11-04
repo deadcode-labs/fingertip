@@ -6,7 +6,7 @@
 
 Lets an agent see and drive an **iOS simulator** or a **macOS app**: it reads the screen through Accessibility, then taps, types, scrolls and takes screenshots — no XCTest runner, no UI test target in the app under test.
 
-It runs as **`fingertip-mcp`**, an MCP server, so Claude Code can do manual verification itself: open your app, walk a flow, check what is on screen. Its `run_instruction` tool hands a whole natural-language instruction to [Jev](https://docs.typesafe.ai) (TypeSafe's System One), which drives the device choosing each step from a closed set of on-screen elements.
+It runs as **`fingertip-mcp`**, an MCP server, so Claude Code — or any other MCP client, like Codex — can do manual verification itself: open your app, walk a flow, check what is on screen. Its `run_instruction` tool hands a whole natural-language instruction to [Jev](https://docs.typesafe.ai) (TypeSafe's System One), which drives the device choosing each step from a closed set of on-screen elements.
 
 ## Requirements
 
@@ -17,7 +17,7 @@ It runs as **`fingertip-mcp`**, an MCP server, so Claude Code can do manual veri
   brew tap lycorp-jp/tap && brew install lycorp-jp/tap/sim-use
   ```
 
-- For macOS apps: **Accessibility** permission, and **Screen Recording** for screenshots. They are granted to the app that runs fingertip — for the MCP, the terminal running Claude Code.
+- For macOS apps: **Accessibility** permission, and **Screen Recording** for screenshots. They are granted to the app that runs fingertip — for the MCP, the terminal running Claude Code (or the MCP client you use).
 
 ## Install
 
@@ -36,7 +36,18 @@ swift build -c release
 claude mcp add --scope user fingertip -- "$PWD/.build/release/fingertip-mcp"
 ```
 
-Either way, registered at user scope it is available from the repo of whatever app you are testing. Then ask Claude things like *"relaunch the app on the simulator, log in with test@example.com and check that the inbox shows three messages"*.
+### In other MCP clients
+
+fingertip is a plain stdio MCP server, so any client can launch it; the app only registers it in Claude Code, so other clients are set up by hand. In Codex (`~/.codex/config.toml`):
+
+```toml
+[mcp_servers.fingertip]
+command = "/Applications/Fingertip.app/Contents/Resources/fingertip-mcp"
+```
+
+Clients with an `mcpServers` JSON (Cursor, Claude Desktop, Gemini CLI) take the same command. What changes outside Claude Code is in [`docs/mcp.md`](docs/mcp.md#other-mcp-clients).
+
+In Claude Code, registered at user scope it is available from the repo of whatever app you are testing. Then ask Claude things like *"relaunch the app on the simulator, log in with test@example.com and check that the inbox shows three messages"*.
 
 | Tool | What it does |
 |---|---|
