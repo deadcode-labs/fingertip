@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Docs for using `fingertip-mcp` from MCP clients other than Claude Code: the plain stdio command, a Codex `config.toml` and an `mcpServers` JSON example, and what differs outside Claude Code (manual registration, permissions on the client's process, no `Listo` in the toast without the Stop hook). Verified with Codex CLI on a Mac app.
+
 ## [0.4.0] - 2026-11-04
 
 ### Added
