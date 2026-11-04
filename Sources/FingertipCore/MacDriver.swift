@@ -625,7 +625,9 @@ actor MacDriver: ScreenDriver {
         let pid = app.processIdentifier
         let root = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(root, 2)
-        if Self.frontmostPID() != pid { app.activate() }
+        // Asked of the app: the system-wide `AXFocusedApplication` fails with
+        // kAXErrorCannotComplete (-25204) from a command-line process such as the MCP.
+        if Self.attribute(root, "AXFrontmost") != true { app.activate() }
         let deadline = ContinuousClock.now + .seconds(2)
         var raised = false
         while true {
@@ -667,13 +669,6 @@ actor MacDriver: ScreenDriver {
             return (pid, number)
         }
         return nil
-    }
-
-    static func frontmostPID() -> pid_t? {
-        let system = AXUIElementCreateSystemWide()
-        guard let app: AXUIElement = attribute(system, "AXFocusedApplication") else { return nil }
-        var pid: pid_t = 0
-        return AXUIElementGetPid(app, &pid) == .success ? pid : nil
     }
 
     /// El único camino que mueve el cursor: hace falta traer la app al frente

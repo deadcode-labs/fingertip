@@ -172,7 +172,7 @@ extension MacDriver {
     /// The app is frontmost, AX lists the window (so it is on a Space on screen) and it is the
     /// app's main or focused one (focused alone would miss a window with a sheet up).
     private static func isInFront(_ number: CGWindowID, root: AXUIElement) -> Bool {
-        // Asked of the app: the system-wide `AXFocusedApplication` reads back nil from the MCP.
+        // Asked of the app, like `bringForward`: the system-wide `AXFocusedApplication` fails from the MCP.
         guard attribute(root, "AXFrontmost") == true else { return false }
         let windows: [AXUIElement] = attribute(root, "AXWindows") ?? []
         guard windows.contains(where: { windowNumber($0) == number }) else { return false }
