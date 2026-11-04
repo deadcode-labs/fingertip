@@ -320,8 +320,8 @@ final class Session {
         "com.microsoft.VSCode", "com.microsoft.VSCodeInsiders", "com.vscodium",
         "com.todesktop.230313mzl4w4u92", "com.exafunction.windsurf",
         "dev.zed.Zed", "dev.zed.Zed-Preview", "com.panic.Nova", "com.google.android.studio",
-        // Claude
-        "com.anthropic.claudefordesktop",
+        // Other agents' desktop apps: Claude, Codex and ChatGPT (the current ChatGPT app is com.openai.codex too; com.openai.chat is the older one)
+        "com.anthropic.claudefordesktop", "com.openai.codex", "com.openai.chat",
         // Scripts y automatización
         "com.apple.ScriptEditor2", "com.apple.Automator", "com.apple.shortcuts",
         "com.raycast.macos", "com.runningwithcrayons.Alfred", "com.stairways.keyboardmaestro.editor",

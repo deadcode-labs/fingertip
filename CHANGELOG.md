@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Docs for using `fingertip-mcp` from MCP clients other than Claude Code: the plain stdio command, a Codex `config.toml` and an `mcpServers` JSON example, and what differs outside Claude Code (manual registration, permissions on the client's process, no `Listo` in the toast without the Stop hook). Verified with Codex CLI on a Mac app.
 
+### Changed
+- The Codex and ChatGPT desktop apps (`com.openai.codex`, `com.openai.chat`) are blocked for the MCP, like Claude's: another agent's app takes typed text as instructions with its own permissions.
+
 ## [0.4.0] - 2026-11-04
 
 ### Added
