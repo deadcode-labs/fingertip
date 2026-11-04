@@ -17,7 +17,11 @@ nonisolated enum ClaudeMCPInstaller {
         let message: String
     }
 
-    static func install(apiKey: String) -> Result {
+    /// UserDefaults key for the "modo dios" switch in Settings. The MCP never reads it:
+    /// it only decides whether `install` registers the server with `FINGERTIP_UNRESTRICTED=1`.
+    static let unrestrictedKey = "unrestrictedMCP"
+
+    static func install(apiKey: String, unrestricted: Bool) -> Result {
         guard let claudePath = resolveClaudeBinary() else {
             return Result(succeeded: false, message: "No encontré `claude` en el PATH del shell de login.")
         }
@@ -26,6 +30,18 @@ nonisolated enum ClaudeMCPInstaller {
             .appending(path: "Contents/Resources/fingertip-mcp")
             .path
 
+        // Without a key in this app's Keychain, keep the one already registered: re-registering
+        // (the "modo dios" switch does it) must not silently drop `run_instruction`'s key.
+        var apiKey = apiKey
+        if apiKey.isEmpty {
+            let (_, current) = run(URL(fileURLWithPath: claudePath), ["mcp", "get", "fingertip"])
+            apiKey = current
+                .split(whereSeparator: \.isNewline)
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .first { $0.hasPrefix("TYPESAFE_API_KEY=") }
+                .map { String($0.dropFirst("TYPESAFE_API_KEY=".count)) } ?? ""
+        }
+
         // `claude mcp add` refuses a name that already exists, so updating means removing first.
         // It fails when nothing is registered yet, which is fine.
         _ = run(URL(fileURLWithPath: claudePath), ["mcp", "remove", "--scope", "user", "fingertip"])
@@ -33,6 +49,9 @@ nonisolated enum ClaudeMCPInstaller {
         var arguments = ["mcp", "add", "--scope", "user", "fingertip"]
         if !apiKey.isEmpty {
             arguments += ["-e", "TYPESAFE_API_KEY=\(apiKey)"]
+        }
+        if unrestricted {
+            arguments += ["-e", "FINGERTIP_UNRESTRICTED=1"]
         }
         arguments += ["--", mcpPath]
 

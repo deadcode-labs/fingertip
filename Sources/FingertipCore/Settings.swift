@@ -23,6 +23,11 @@ public nonisolated struct FingertipSettings: Codable, Equatable, Sendable {
     /// the desktop the user is looking at, so it is off until the user turns it on. Optional
     /// so a settings file written before it decodes; `nil` is off.
     public var allowsBringToFront: Bool?
+    /// Entries of `BlockedApps.builtIn` or `extraBlockedApps` the user unblocked, lowercased.
+    /// Optional so an older settings file decodes; read through `unblockedApps`.
+    public var unblockedAppIDs: [String]?
+    /// Bundle ids the user added to the block list, lowercased.
+    public var extraBlockedAppIDs: [String]?
 
     public nonisolated init(runsDirectory: URL? = nil, screenshotsDirectory: URL? = nil, recordingsDirectory: URL? = nil) {
         self.runsDirectory = runsDirectory
@@ -31,6 +36,8 @@ public nonisolated struct FingertipSettings: Codable, Equatable, Sendable {
     }
 
     public var bringToFrontEnabled: Bool { allowsBringToFront ?? false }
+    public var unblockedApps: [String] { unblockedAppIDs ?? [] }
+    public var extraBlockedApps: [String] { extraBlockedAppIDs ?? [] }
 
     /// Named after the removed Jev app, where runs were first logged; kept so earlier runs stay
     /// in the same folder.

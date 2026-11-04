@@ -197,9 +197,10 @@ struct OnboardingView: View {
     private func register() {
         registering = true
         let key = apiKey
+        let unrestricted = UserDefaults.standard.bool(forKey: ClaudeMCPInstaller.unrestrictedKey)
         Task {
             // `claude mcp add` blocks on a subprocess; keep it off the main actor.
-            let installed = await Task.detached { ClaudeMCPInstaller.install(apiKey: key) }.value
+            let installed = await Task.detached { ClaudeMCPInstaller.install(apiKey: key, unrestricted: unrestricted) }.value
             registration = installed.succeeded
                 ? await Task.detached { SetupService.claudeRegistration(expectsJevKey: !key.isEmpty) }.value
                 : SetupService.Check(passed: false, detail: installed.message)

@@ -69,7 +69,7 @@ After changing the package, rebuild in release and reconnect the server (`/mcp` 
 
 ### Safety
 
-Everything fingertip reads off a screen reaches the model as text, so an instruction hidden in a web page or an email could try to steer it. By default the MCP refuses to drive terminals, editors with integrated terminals, other agents' apps (Claude, Codex, ChatGPT), automation tools and launchers, System Settings and password managers. Only you can lift that, when registering the server:
+Everything fingertip reads off a screen reaches the model as text, so an instruction hidden in a web page or an email could try to steer it. By default the MCP refuses to drive terminals, editors with integrated terminals, other agents' apps (Claude, Codex, ChatGPT), automation tools and launchers, System Settings and password managers. Only you can lift that, in the app's Settings → Seguridad: allow single apps (and add others to block), or turn on "Modo dios" for all of them; either way, reconnect with `/mcp`. Without the app, register the server with the variable:
 
 ```bash
 claude mcp add --scope user fingertip -e FINGERTIP_UNRESTRICTED=1 -- "$PWD/.build/release/fingertip-mcp"
