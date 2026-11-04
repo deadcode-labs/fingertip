@@ -22,18 +22,29 @@ actor RunLog {
     /// sobre la misma pantalla, y eso solo generaría un archivo por segundo.
     private var saved: [SHA256.Digest: String] = [:]
 
-    init() {
-        let directory = FingertipSettings.load().effectiveRunsDirectory
-        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    /// A Jev run: `<directory>/<date>.jsonl` with its screenshots in `<directory>/<date>/`. The
+    /// directory is the settings' runs folder, or a test's `jev/` while a test is open.
+    init(directory: URL? = nil) {
+        let directory = directory ?? FingertipSettings.load().effectiveRunsDirectory
+        let stamp = Self.stamp()
+        self.init(file: directory.appending(path: "\(stamp).jsonl"),
+                  screenshots: directory.appending(path: stamp, directoryHint: .isDirectory))
+    }
 
-        let stamp = Date.now.formatted(
+    /// Any JSONL with its screenshots folder; a test's trace is `trace.jsonl` with `screens/`.
+    init(file: URL, screenshots: URL) {
+        try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        url = file
+        path = file.path
+        self.screenshots = screenshots
+    }
+
+    /// `2026-11-04T18-30-12`: local time, no colons so it is a valid file name everywhere.
+    nonisolated static func stamp(_ date: Date = .now) -> String {
+        date.formatted(
             .verbatim("\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits)T\(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits):\(second: .twoDigits)",
                       locale: .current, timeZone: .current, calendar: .current)
         ).replacingOccurrences(of: ":", with: "-")
-
-        url = directory.appending(path: "\(stamp).jsonl")
-        path = url.path
-        screenshots = directory.appending(path: stamp, directoryHint: .isDirectory)
     }
 
     /// Guarda la captura si es una imagen que esta corrida no vio todavía, y
