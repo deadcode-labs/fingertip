@@ -304,51 +304,20 @@ final class Session {
 
     // MARK: - Apps bloqueadas
 
-    /// Apps donde escribir y apretar Return equivale a correr código o a tocar
-    /// secretos. Todo lo que el servidor lee de la pantalla le llega a Claude
-    /// como texto, y una instrucción escondida en una página o un mail podría
-    /// llevarlo a conectarse a una terminal y escribir un comando. Se rechazan
-    /// salvo que quien registró el servidor lo haya liberado.
-    /// En minúsculas: Launch Services resuelve los bundle id sin distinguir mayúsculas.
-    private static let blockedApps: Set<String> = Set([
-        // Terminales
-        "com.apple.Terminal", "com.googlecode.iterm2", "com.mitchellh.ghostty",
-        "dev.warp.Warp-Stable", "dev.warp.Warp", "net.kovidgoyal.kitty",
-        "org.alacritty", "io.alacritty", "com.github.wez.wezterm",
-        "co.zeit.hyper", "org.tabby",
-        // Editors with an integrated terminal (Cursor is com.todesktop.…; JetBrains IDEs go by prefix)
-        "com.microsoft.VSCode", "com.microsoft.VSCodeInsiders", "com.vscodium",
-        "com.todesktop.230313mzl4w4u92", "com.exafunction.windsurf",
-        "dev.zed.Zed", "dev.zed.Zed-Preview", "com.panic.Nova", "com.google.android.studio",
-        // Other agents' desktop apps: Claude, Codex and ChatGPT (the current ChatGPT app is com.openai.codex too; com.openai.chat is the older one)
-        "com.anthropic.claudefordesktop", "com.openai.codex", "com.openai.chat",
-        // Scripts y automatización
-        "com.apple.ScriptEditor2", "com.apple.Automator", "com.apple.shortcuts",
-        "com.raycast.macos", "com.runningwithcrayons.Alfred", "com.stairways.keyboardmaestro.editor",
-        // System Settings: privacy permissions and security settings
-        "com.apple.systempreferences",
-        // Contraseñas
-        "com.apple.keychainaccess", "com.apple.Passwords", "com.1password.1password",
-        "com.agilebits.onepassword7", "com.bitwarden.desktop", "com.lastpass.LastPass",
-        // Fingertip itself: its Settings has the switch that lifts this block
-        "com.maxward.fingertip"
-    ].map { $0.lowercased() })
-
-    private static let blockedPrefixes = ["com.jetbrains."]
-
-    /// Lo decide el usuario al registrar el servidor, no Claude: un argumento de
-    /// la tool lo podría pasar la misma instrucción inyectada que se quiere frenar.
+    /// The list lives in `BlockedApps`; the user edits it in the app's Security pane.
+    /// God mode is decided when registering the server, not by Claude: a tool argument
+    /// could be passed by the same injected instruction the block is meant to stop.
     private static let isUnrestricted = ProcessInfo.processInfo.environment["FINGERTIP_UNRESTRICTED"] == "1"
 
-    private static func isBlocked(_ bundleID: String) -> Bool {
-        let id = bundleID.lowercased()
-        return !isUnrestricted && (blockedApps.contains(id) || blockedPrefixes.contains { id.hasPrefix($0) })
+    /// Reads the settings on every call: the app may change the list while the MCP runs.
+    private static func isBlocked(_ bundleID: String, settings: FingertipSettings = .load()) -> Bool {
+        BlockedApps.isBlocked(bundleID, unrestricted: isUnrestricted, settings: settings)
     }
 
     private static func blockedError(_ bundleID: String) -> ToolResult {
         .error(ToolError.blockedApp("""
         \(bundleID) está bloqueada: escribir en ella puede correr comandos o exponer secretos. \
-        Solo el usuario puede liberarla, con el modo dios en los ajustes de Fingertip o registrando el servidor con `-e FINGERTIP_UNRESTRICTED=1`.
+        Solo el usuario puede liberarla, en Ajustes de Fingertip → Seguridad o registrando el servidor con `-e FINGERTIP_UNRESTRICTED=1`.
         """))
     }
 
@@ -367,7 +336,8 @@ final class Session {
         lines.append("")
         lines.append("Apps de macOS corriendo:")
         let apps = MacApp.running()
-        lines += apps.map { "  \($0.name) — \($0.bundleID) — \($0.bundleURL.path)\(Self.isBlocked($0.bundleID) ? " — bloqueada" : "")" }
+        let settings = FingertipSettings.load()
+        lines += apps.map { "  \($0.name) — \($0.bundleID) — \($0.bundleURL.path)\(Self.isBlocked($0.bundleID, settings: settings) ? " — bloqueada" : "")" }
         if let target {
             // La conexión no se entera si la app se cerró o el simulador se apagó:
             // decirlo acá evita que alguien crea que sigue apuntando a algo vivo.
