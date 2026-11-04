@@ -309,9 +309,20 @@ final class Session {
     /// could be passed by the same injected instruction the block is meant to stop.
     private static let isUnrestricted = ProcessInfo.processInfo.environment["FINGERTIP_UNRESTRICTED"] == "1"
 
-    /// Reads the settings on every call: the app may change the list while the MCP runs.
+    /// The apps the user allowed, read once at launch, like god mode. Through an app that is
+    /// not blocked (a text editor), an injected instruction could edit the settings file; read
+    /// live, that would unblock a terminal within the same session. Read at launch, it takes a
+    /// restart (`/mcp`), as editing the registration does.
+    private static let atLaunch = FingertipSettings.load()
+
+    /// Blocks added since launch apply on the next check: that direction opens nothing. The
+    /// ones present at launch are kept even if the file loses them (edited, or no longer
+    /// decodes): removing a block, like allowing an app, takes a restart.
     private static func isBlocked(_ bundleID: String, settings: FingertipSettings = .load()) -> Bool {
-        BlockedApps.isBlocked(bundleID, unrestricted: isUnrestricted, settings: settings)
+        var settings = settings
+        settings.unblockedAppIDs = atLaunch.unblockedAppIDs
+        settings.extraBlockedAppIDs = atLaunch.extraBlockedApps + settings.extraBlockedApps
+        return BlockedApps.isBlocked(bundleID, unrestricted: isUnrestricted, settings: settings)
     }
 
     private static func blockedError(_ bundleID: String) -> ToolResult {

@@ -60,9 +60,10 @@ public nonisolated enum BlockedApps {
         guard !unrestricted else { return false }
         let id = bundleID.lowercased()
         if id == fingertip { return true }
-        let listed = (builtIn.flatMap(\.bundleIDs) + settings.extraBlockedApps).first { matches(id, $0) }
-        guard let listed else { return false }
-        return !settings.unblockedApps.contains(listed)
+        // Every matching entry must be allowed: allowing the JetBrains prefix must not let
+        // through an IDE the user added to block on its own.
+        return (builtIn.flatMap(\.bundleIDs) + settings.extraBlockedApps)
+            .contains { matches(id, $0) && !settings.unblockedApps.contains($0) }
     }
 
     private static func matches(_ id: String, _ entry: String) -> Bool {

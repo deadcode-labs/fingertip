@@ -204,7 +204,7 @@ private struct SecurityPane: View {
             }
 
             Section {
-                Text("El MCP no maneja estas apps: escribir en ellas puede correr comandos o exponer secretos. Prendé una para permitirla. Vale desde el próximo uso, sin reconectar. Las que no tenés instaladas no aparecen y siguen bloqueadas.")
+                Text("El MCP no maneja estas apps: escribir en ellas puede correr comandos o exponer secretos. Prendé una para permitirla y reconectá con `/mcp`: el MCP lee las permitidas solo al arrancar, para que una instrucción inyectada no pueda liberarlas a mitad de sesión editando los ajustes. Las que no tenés instaladas no aparecen y siguen bloqueadas.")
                     .foregroundStyle(.secondary)
             } header: {
                 Text("Apps bloqueadas")
@@ -260,7 +260,7 @@ private struct SecurityPane: View {
             } header: {
                 Text("Agregadas por vos")
             } footer: {
-                Text("Elegí una app para bloquearla igual que las de arriba.")
+                Text("Elegí una app para bloquearla igual que las de arriba. Bloquear vale desde la próxima conexión a esa app, sin reconectar el MCP; quitarla de la lista, como permitir, pide `/mcp`.")
             }
             .fileImporter(isPresented: $addingApp, allowedContentTypes: [.application]) { result in
                 if case .success(let url) = result { add(url) }
