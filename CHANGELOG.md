@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - An optional Jev step in the onboarding, before Claude Code: it explains that only `run_instruction` uses Jev and takes the API key, saved to the Keychain like Settings → Jev. The Claude Code step now flags a registration without the key when the app has one.
 
 ### Fixed
+- A real click on the Mac could land in the middle of the user's drag and cut it. It now waits for every mouse button to be up, and with one still down after 2 s it sends nothing and fails with `mouse_button_held` (retry-safe).
 - Key and mouse events fingertip posts on the Mac (the real click, `submit`'s Return, typing and erasing in a password field) picked up the modifiers the user was holding: with ⌘ down, a click went out as a ⌘-click and a Return as ⌘Return. They now carry no modifiers.
 - `type_text` and `erase_text` on a Mac password field answered success and changed nothing, since macOS ignores AX writes there. They now post key events to the app, which reach the field with the app in the background and take any Unicode.
 - `jev_missing_api_key` pointed at an Xcode scheme from the removed Jev app; it now points at Fingertip's Settings → Jev and the re-registration, and says the other tools work without the key.
