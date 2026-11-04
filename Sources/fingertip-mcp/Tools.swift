@@ -23,6 +23,7 @@ nonisolated enum ToolError: FingertipError {
     case appNotFound(String)
     case appVanished(String)
     case timedOut(String)
+    case bringToFrontDisabled
 
     var code: String {
         switch self {
@@ -32,6 +33,7 @@ nonisolated enum ToolError: FingertipError {
         case .appNotFound: "app_not_found"
         case .appVanished: "app_vanished"
         case .timedOut: "timed_out"
+        case .bringToFrontDisabled: "bring_to_front_disabled"
         }
     }
 
@@ -46,6 +48,8 @@ nonisolated enum ToolError: FingertipError {
         case .invalidArguments(let message), .blockedApp(let message), .notConnected(let message),
              .appNotFound(let message), .appVanished(let message), .timedOut(let message):
             message
+        case .bringToFrontDisabled:
+            "Traer ventanas al frente está desactivado: lo activa la persona en Fingertip → Ajustes → General → Ventanas. No hace falta reconectar."
         }
     }
 }
@@ -107,6 +111,14 @@ final class Session {
                 name: "list_windows",
                 description: "macOS: las ventanas de la app conectada, con su número, título y posición, y cuál tiene el foco y cuál está elegida. Elegí una con `read_screen` y `window`.",
                 handler: { _ in await self.listWindows() }
+            ),
+            Tool(
+                name: "bring_to_front",
+                description: "macOS: trae al frente una ventana de la app y la deja elegida; si está en otro escritorio, cambia a ese escritorio (lo que ve la persona cambia). Sin `window`, la elegida o la única. Devuelve la pantalla. Solo funciona si la persona lo permitió en Fingertip → Ajustes; si no, falla con `bring_to_front_disabled`.",
+                properties: [
+                    "window": ["type": "integer", "description": "Número de ventana de `list_windows`."]
+                ],
+                handler: { await self.bringToFront($0) }
             ),
             Tool(
                 name: "wait_for",
@@ -261,6 +273,7 @@ final class Session {
         case "set_value": return "Cambiando el valor de \(tapTarget(arguments))"
         case "toggle": return "Alternando \(tapTarget(arguments))"
         case "list_windows": return "Listando ventanas"
+        case "bring_to_front": return "Trayendo la ventana al frente"
         // Typed text and instructions may carry a password: the toast is on screen and in recordings.
         case "type_text": return "Escribiendo \(text.count) caracteres"
         case "erase_text": return "Borrando \(arguments["count"] as? Int ?? 0) caracteres"
@@ -601,6 +614,21 @@ final class Session {
         }
         lines.append("Elegí una con `read_screen` y `window: <número>`.")
         return .text(lines.joined(separator: "\n"))
+    }
+
+    private func bringToFront(_ arguments: [String: Any]) async -> ToolResult {
+        guard FingertipSettings.load().bringToFrontEnabled else { return .error(ToolError.bringToFrontDisabled) }
+        if let failure = await ensureConnected() { return failure }
+        guard case .mac? = target else { return .invalid("`bring_to_front` es para apps de macOS: el simulador tiene una sola pantalla.") }
+        var window: Int?
+        if let raw = arguments["window"] {
+            guard let number = Self.int(raw) else { return .invalid("`window` es el número de `list_windows`.") }
+            window = number
+        }
+        await inspector.bringToFront(window: window)
+        if let failure = inspector.failure { return .error(failure) }
+        focusRegion = nil
+        return .text(outline())
     }
 
     // MARK: - Acciones

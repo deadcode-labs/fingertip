@@ -244,6 +244,17 @@ public final class ScreenInspector {
         await readScreen()
     }
 
+    /// Brings a window forward and reads it.
+    public func bringToFront(window: Int?) async {
+        guard let driver else { return }
+        do {
+            try await driver.bringToFront(window: window)
+        } catch {
+            return report(error)
+        }
+        await readScreen()
+    }
+
     /// Bounds are left out: a scroll or a resize moves elements without changing what an alias points to.
     private static func sameSlot(_ a: UIElement, _ b: UIElement) -> Bool {
         a.alias == b.alias && a.type == b.type && a.region == b.region

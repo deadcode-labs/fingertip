@@ -52,6 +52,10 @@ nonisolated enum MacDriverError: FingertipError {
     case windowOnOtherSpace(WindowInfo)
     /// The app never ended up under the point, so no click was sent.
     case notClickable(String)
+    /// The user kept a mouse button down, so no click was sent: it would cut their drag.
+    case mouseButtonHeld
+    /// `bring_to_front` asked for the window and it did not end up in front within 2 s.
+    case notBroughtForward(String)
 
     var code: String {
         switch self {
@@ -80,6 +84,8 @@ nonisolated enum MacDriverError: FingertipError {
         case .windowGone: "window_gone"
         case .windowOnOtherSpace: "window_on_other_space"
         case .notClickable: "not_clickable"
+        case .mouseButtonHeld: "mouse_button_held"
+        case .notBroughtForward: "not_brought_forward"
         }
     }
 
@@ -90,7 +96,7 @@ nonisolated enum MacDriverError: FingertipError {
         switch self {
         case .unknownAlias, .staleAlias, .noWindow, .captureFailed: true
         case .menuAlreadyOpen, .optionNotFound, .notSettable, .invalidValue, .wrongElement,
-             .ambiguousWindow, .unknownWindow, .windowGone, .windowOnOtherSpace, .notClickable: true
+             .ambiguousWindow, .unknownWindow, .windowGone, .windowOnOtherSpace, .notClickable, .mouseButtonHeld: true
         // A menu that opened late was cancelled (`openMenu`). What is not safe is a step that
         // changed the window: a click on a plain button, which ran it.
         case .menuDidNotOpen(_, let steps): !steps.contains { $0.outcome == .delivered }
@@ -145,10 +151,14 @@ nonisolated enum MacDriverError: FingertipError {
             "\(app) tiene \(windows.count) ventanas: \(windows.map { $0.caption + ($0.isOnOtherSpace ? " (en otro escritorio)" : "") }.joined(separator: ", ")). Elegí una con `read_screen` y `window` (`list_windows` las muestra con su posición)."
         case .unknownWindow(let number):
             "No hay ventana #\(number) en la app: mirá `list_windows`."
+        case .mouseButtonHeld:
+            "No hice el clic real: hay un botón del mouse apretado (la persona está arrastrando o haciendo clic) y en 2 s no lo soltó. Un clic en medio le cortaría el arrastre. No toqué nada; probá de nuevo en un momento."
         case .notClickable(let name):
             "No hice el clic real: la ventana de \(name) no quedó al frente en ese punto en 2 s (otra ventana la tapa, o está en otro Space). No toqué nada; traela al frente y probá de nuevo."
         case .windowOnOtherSpace(let window):
-            "La ventana \(window.caption) está en otro escritorio y desde acá Accesibilidad no la alcanza. Traela a este escritorio (o pasá a ese) y volvé a leer."
+            "La ventana \(window.caption) está en otro escritorio y desde acá Accesibilidad no la alcanza. Traela con `bring_to_front` (si está permitido en Fingertip → Ajustes → General), o pasá a ese escritorio y volvé a leer."
+        case .notBroughtForward(let window):
+            "Pedí traer al frente la ventana \(window) y en 2 s no quedó adelante (la app no la tiene en su menú Ventana, o tiene otra con el mismo título). Pasá a su escritorio a mano y volvé a leer."
         case .windowGone(let detail):
             "La ventana elegida ya no está (\(detail)). Elegí otra con `list_windows`."
         }
@@ -600,8 +610,11 @@ actor MacDriver: ScreenDriver {
         guard let app = runningApp() else { throw MacDriverError.notRunning(bundleID) }
         let source = CGEventSource(stateID: .hidSystemState)
         for isDown in [true, false] {
-            CGEvent(keyboardEventSource: source, virtualKey: 0x24, keyDown: isDown)?
-                .postToPid(app.processIdentifier)
+            let event = CGEvent(keyboardEventSource: source, virtualKey: 0x24, keyDown: isDown)
+            // An event from `.hidSystemState` carries the modifiers the user is holding (measured
+            // with ⌘): this Return would go out as ⌘Return. Same in `postKeys` and `click`.
+            event?.flags = []
+            event?.postToPid(app.processIdentifier)
         }
     }
 
@@ -615,12 +628,17 @@ actor MacDriver: ScreenDriver {
     /// The app being in front is not enough either when it has several windows: the target
     /// window is raised (`AXRaise`), and the window under the point must not be another of the
     /// app's windows. A window of the app that AX does not list as one (a sheet) is accepted.
+    ///
+    /// It also waits while the user holds a mouse button: a down/up posted in the middle of
+    /// their drag would end it and leave their own release without a press.
     private func bringForward(clickingAt point: CGPoint) async throws {
         guard let app = runningApp() else { throw MacDriverError.notRunning(bundleID) }
         let pid = app.processIdentifier
         let root = AXUIElementCreateApplication(pid)
         AXUIElementSetMessagingTimeout(root, 2)
-        if Self.frontmostPID() != pid { app.activate() }
+        // Asked of the app: the system-wide `AXFocusedApplication` fails with
+        // kAXErrorCannotComplete (-25204) from a command-line process such as the MCP.
+        if Self.attribute(root, "AXFrontmost") != true { app.activate() }
         let deadline = ContinuousClock.now + .seconds(2)
         var raised = false
         while true {
@@ -634,17 +652,24 @@ actor MacDriver: ScreenDriver {
                 }
                 let number = Self.windowNumber(target)
                 let others = Set(windows.compactMap(Self.windowNumber)).subtracting([number].compactMap { $0 })
-                if let top = Self.topWindow(at: point), top.pid == pid, !others.contains(top.number) { break }
+                if let top = Self.topWindow(at: point), top.pid == pid, !others.contains(top.number),
+                   !Self.isMouseButtonHeld() { break }
             }
             guard ContinuousClock.now < deadline else {
                 // The window errors (closed, ambiguous) say more than "not clickable".
                 if !windows.isEmpty { _ = try targetWindow(root: root, app: app) }
+                if Self.isMouseButtonHeld() { throw MacDriverError.mouseButtonHeld }
                 throw MacDriverError.notClickable(app.localizedName ?? bundleID)
             }
             try? await Task.sleep(for: .milliseconds(50))
         }
         // The window can report in while its animation is still ending.
         try? await Task.sleep(for: .milliseconds(100))
+    }
+
+    /// Any button of the user's mouse or trackpad is down right now.
+    private static func isMouseButtonHeld() -> Bool {
+        [CGMouseButton.left, .right, .center].contains { CGEventSource.buttonState(.hidSystemState, button: $0) }
     }
 
     /// The topmost normal window at `point`, in the window server's front-to-back order: its
@@ -664,21 +689,17 @@ actor MacDriver: ScreenDriver {
         return nil
     }
 
-    static func frontmostPID() -> pid_t? {
-        let system = AXUIElementCreateSystemWide()
-        guard let app: AXUIElement = attribute(system, "AXFocusedApplication") else { return nil }
-        var pid: pid_t = 0
-        return AXUIElementGetPid(app, &pid) == .success ? pid : nil
-    }
-
     /// El único camino que mueve el cursor: hace falta traer la app al frente
     /// para que el clic le llegue a ella y no a lo que esté encima.
     func click(at point: CGPoint) async throws {
         try await bringForward(clickingAt: point)
+        // A press may have started during the last 100 ms of `bringForward`.
+        guard !Self.isMouseButtonHeld() else { throw MacDriverError.mouseButtonHeld }
         let source = CGEventSource(stateID: .hidSystemState)
         for type in [CGEventType.leftMouseDown, .leftMouseUp] {
-            CGEvent(mouseEventSource: source, mouseType: type, mouseCursorPosition: point, mouseButton: .left)?
-                .post(tap: .cghidEventTap)
+            let event = CGEvent(mouseEventSource: source, mouseType: type, mouseCursorPosition: point, mouseButton: .left)
+            event?.flags = [] // Not a ⌘-click when the user holds ⌘ (see `submit`).
+            event?.post(tap: .cghidEventTap)
         }
     }
 
@@ -710,6 +731,7 @@ actor MacDriver: ScreenDriver {
         for key in keys {
             for isDown in [true, false] {
                 let event = CGEvent(keyboardEventSource: source, virtualKey: key.code, keyDown: isDown)
+                event?.flags = [] // A held ⌘ would turn a typed letter into a shortcut (see `submit`).
                 if let text = key.text {
                     event?.keyboardSetUnicodeString(stringLength: text.count, unicodeString: text)
                 }

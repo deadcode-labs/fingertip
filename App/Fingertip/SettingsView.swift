@@ -49,7 +49,7 @@ struct SettingsView: View {
             let pane = selection ?? .general
             Group {
                 switch pane {
-                case .general: GeneralPane(apiKey: apiKey)
+                case .general: GeneralPane(settings: $settings, apiKey: apiKey, saveError: saveError)
                 case .captures: CapturesPane(settings: $settings, saveError: saveError)
                 case .jev: JevPane(apiKey: $apiKey)
                 }
@@ -73,7 +73,9 @@ struct SettingsView: View {
 // MARK: - General
 
 private struct GeneralPane: View {
+    @Binding var settings: FingertipSettings
     let apiKey: String
+    let saveError: String?
     @State private var installResult: ClaudeMCPInstaller.Result?
     @State private var installing = false
 
@@ -113,6 +115,22 @@ private struct GeneralPane: View {
                     Text("Se muestran mientras esta app esté abierta")
                         .foregroundStyle(.secondary)
                 }
+            }
+
+            Section {
+                Toggle("Permitir traer ventanas al frente", isOn: Binding(
+                    get: { settings.bringToFrontEnabled },
+                    set: { settings.allowsBringToFront = $0 }
+                ))
+            } header: {
+                Text("Ventanas")
+            } footer: {
+                Text("Habilita `bring_to_front`: activa la app y, si la ventana está en otro escritorio, cambia a ese escritorio. Mueve lo que estás viendo. El MCP lo lee en cada uso: no hace falta reconectar.")
+            }
+
+            if let saveError {
+                Label(saveError, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
             }
         }
     }
