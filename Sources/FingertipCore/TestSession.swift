@@ -28,6 +28,9 @@ public final class TestSession {
 
     private let trace: RunLog
     private var summary: [String: Any]
+    /// Text typed during the test. It may be a password, so no later line keeps it either: the
+    /// replies echo it (`Escribir "…"`, Jev's `Escribí "…"`), and so can a field read later.
+    private var secrets: Set<String> = []
 
     public init(name: String, target: String) throws {
         let stem = "\(RunLog.stamp())-\(Self.slug(name))"
@@ -54,9 +57,31 @@ public final class TestSession {
         writeSummary()
     }
 
-    /// One tool call. The screen after it is saved once per distinct image.
+    /// One tool call. The screen after it is saved once per distinct image. Typed text is
+    /// redacted as in the toast and Jev's log: the arguments keep only its length.
     public func record(tool: String, arguments: [String: Any], text: String, errorCode: String?,
                        milliseconds: Int, screen: Data?) async {
+        var arguments = arguments
+        switch tool {
+        case "type_text", "set_value":
+            let key = tool == "type_text" ? "text" : "value"
+            if let typed = arguments[key] as? String {
+                secrets.insert(typed)
+                arguments[key] = "[texto, \(typed.count) caracteres]"
+            }
+        case "run_instruction":
+            if let instruction = arguments["instruction"] as? String {
+                secrets.formUnion(JevClient.textCandidates(in: instruction))
+                arguments["instruction"] = JevClient.redactingTextCandidates(in: instruction)
+            }
+        default:
+            break
+        }
+        // Longest first, so a secret inside another doesn't leave the rest of the longer one.
+        // One or two characters would also blank unrelated text in every outline.
+        let text = secrets.filter { $0.count > 2 }.sorted { $0.count > $1.count }
+            .reduce(text) { $0.replacingOccurrences(of: $1, with: "[texto]") }
+
         var entry: [String: Any] = ["tool": tool, "arguments": arguments, "result": text, "ms": milliseconds]
         if let errorCode { entry["error"] = errorCode }
         if let screen, let shot = await trace.saveScreenshot(screen) { entry["screen"] = shot.name }
