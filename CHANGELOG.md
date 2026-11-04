@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- "Modo dios" switch in the app's Settings → General: re-registers the MCP with `FINGERTIP_UNRESTRICTED=1` so it can drive the blocked apps, after an alert that lists what that exposes. The menu-bar menu shows a warning while it is on, and "Instalar / actualizar" and the onboarding keep the chosen value.
+- Settings → Seguridad: the blocked apps that are installed, grouped, each with a switch to allow it, and a list of apps the user adds with "Agregar app…" to block them too. Added blocks apply from the next `connect`; allowed apps and removed blocks are read when the MCP starts, so lifting anything takes `/mcp` (an instruction injected through an unblocked text editor could otherwise edit the settings file and unblock a terminal mid-session). Fingertip itself can only be lifted by god mode.
+- "Modo dios" switch in the app's Settings → Seguridad: re-registers the MCP with `FINGERTIP_UNRESTRICTED=1` so it can drive the blocked apps, after an alert that lists what that exposes. The menu-bar menu shows a warning while it is on, and "Instalar / actualizar" and the onboarding keep the chosen value.
 - Docs for using `fingertip-mcp` from MCP clients other than Claude Code: the plain stdio command, a Codex `config.toml` and an `mcpServers` JSON example, and what differs outside Claude Code (manual registration, permissions on the client's process, no `Listo` in the toast without the Stop hook). Verified with Codex CLI on a Mac app.
 
 ### Changed

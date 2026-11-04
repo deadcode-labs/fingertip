@@ -12,13 +12,14 @@ import UniformTypeIdentifiers
 
 struct SettingsView: View {
     enum Pane: String, CaseIterable, Identifiable {
-        case general, captures, jev
+        case general, security, captures, jev
 
         var id: Self { self }
 
         var title: String {
             switch self {
             case .general: "General"
+            case .security: "Seguridad"
             case .captures: "Capturas"
             case .jev: "Jev"
             }
@@ -27,6 +28,7 @@ struct SettingsView: View {
         var symbol: String {
             switch self {
             case .general: "gearshape"
+            case .security: "lock.shield"
             case .captures: "camera.viewfinder"
             case .jev: "sparkles"
             }
@@ -50,6 +52,7 @@ struct SettingsView: View {
             Group {
                 switch pane {
                 case .general: GeneralPane(settings: $settings, apiKey: apiKey, saveError: saveError)
+                case .security: SecurityPane(settings: $settings, apiKey: apiKey, saveError: saveError)
                 case .captures: CapturesPane(settings: $settings, saveError: saveError)
                 case .jev: JevPane(apiKey: $apiKey)
                 }
@@ -57,7 +60,7 @@ struct SettingsView: View {
             .formStyle(.grouped)
             .navigationTitle(pane.title)
         }
-        .frame(width: 680, height: 440)
+        .frame(width: 680, height: 520)
         .onChange(of: settings) { _, new in
             do {
                 try new.save()
@@ -79,7 +82,6 @@ private struct GeneralPane: View {
     @State private var installResult: ClaudeMCPInstaller.Result?
     @State private var installing = false
     @AppStorage(ClaudeMCPInstaller.unrestrictedKey) private var unrestricted = false
-    @State private var confirmingUnrestricted = false
 
     private var mcpPath: String {
         Bundle.main.bundleURL.appending(path: "Contents/Resources/fingertip-mcp").path
@@ -112,36 +114,6 @@ private struct GeneralPane: View {
                 Text("Registra fingertip en Claude Code para todos tus proyectos. Después reconectá con `/mcp`.")
             }
 
-            Section {
-                Toggle("Modo dios: permitir apps bloqueadas", isOn: Binding(
-                    get: { unrestricted },
-                    set: { on in
-                        if on {
-                            confirmingUnrestricted = true
-                        } else {
-                            setUnrestricted(false)
-                        }
-                    }
-                ))
-                .disabled(installing)
-                if unrestricted {
-                    Label("Activo en todas las sesiones de Claude Code hasta que lo apagues.",
-                          systemImage: "exclamationmark.shield.fill")
-                        .foregroundStyle(.red)
-                        .font(.callout)
-                }
-            } header: {
-                Text("Seguridad")
-            } footer: {
-                Text("Por defecto el MCP se niega a manejar terminales, editores con terminal, otros agentes, herramientas de automatización, Ajustes del Sistema y gestores de contraseñas. Cambiarlo vuelve a registrar el servidor; después reconectá con `/mcp`.")
-            }
-            .alert("¿Activar el modo dios?", isPresented: $confirmingUnrestricted) {
-                Button("Activar", role: .destructive) { setUnrestricted(true) }
-                Button("Cancelar", role: .cancel) {}
-            } message: {
-                Text(Self.unrestrictedWarning)
-            }
-
             Section("Overlay") {
                 LabeledContent("Puntero y estado") {
                     Text("Se muestran mientras esta app esté abierta")
@@ -167,30 +139,7 @@ private struct GeneralPane: View {
         }
     }
 
-    private static let unrestrictedWarning = """
-    Claude va a poder conectarse y escribir en apps que hoy están bloqueadas: Terminal, iTerm y otras terminales; VS Code, Cursor, Zed, JetBrains y otros editores con terminal; las apps de Claude, Codex y ChatGPT; Script Editor, Automator, Atajos, Raycast y Alfred; esta misma app; Ajustes del Sistema; Acceso a Llaveros, Contraseñas, 1Password y otros gestores.
-
-    Qué implica:
-    • Todo lo que fingertip lee de la pantalla le llega a Claude como texto. Una instrucción escondida en una web, un mail o un documento puede llevarlo a abrir una terminal y correr un comando con tus permisos: borrar archivos, subir tus datos, instalar algo.
-    • Las contraseñas, tokens y claves que se vean en pantalla pasan a la conversación.
-    • Puede cambiar permisos de privacidad y seguridad en Ajustes del Sistema.
-    • Puede darle órdenes a otros agentes, que actúan con sus propios permisos.
-    • Vale para todos tus proyectos y sesiones de Claude Code, no solo para la tarea de ahora, hasta que lo apagues.
-
-    Para un uso puntual es más seguro dejarlo apagado y configurar Claude Code para que te pida permiso en cada `connect`.
-    """
-
-    /// Re-registers the server with the new value; on failure the switch goes back,
-    /// so it never shows a mode the registration does not have.
-    private func setUnrestricted(_ on: Bool) {
-        let previous = unrestricted
-        unrestricted = on
-        install { succeeded in
-            if !succeeded { unrestricted = previous }
-        }
-    }
-
-    private func install(completion: @escaping (Bool) -> Void = { _ in }) {
+    private func install() {
         installing = true
         let key = apiKey
         let unrestricted = unrestricted
@@ -199,7 +148,225 @@ private struct GeneralPane: View {
             let result = await Task.detached { ClaudeMCPInstaller.install(apiKey: key, unrestricted: unrestricted) }.value
             installResult = result
             installing = false
-            completion(result.succeeded)
+        }
+    }
+}
+
+// MARK: - Security
+
+private struct SecurityPane: View {
+    @Binding var settings: FingertipSettings
+    let apiKey: String
+    let saveError: String?
+    @AppStorage(ClaudeMCPInstaller.unrestrictedKey) private var unrestricted = false
+    @State private var confirmingUnrestricted = false
+    @State private var installing = false
+    @State private var installError: String?
+    @State private var addingApp = false
+    @State private var addError: String?
+
+    var body: some View {
+        Form {
+            Section {
+                Toggle("Modo dios: permitir todas las apps", isOn: Binding(
+                    get: { unrestricted },
+                    set: { on in
+                        if on {
+                            confirmingUnrestricted = true
+                        } else {
+                            setUnrestricted(false)
+                        }
+                    }
+                ))
+                .disabled(installing)
+                if unrestricted {
+                    Label("Activo en todas las sesiones de Claude Code hasta que lo apagues.",
+                          systemImage: "exclamationmark.shield.fill")
+                        .foregroundStyle(.red)
+                        .font(.callout)
+                }
+                if let installError {
+                    Label(installError, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .font(.callout)
+                        .textSelection(.enabled)
+                }
+            } header: {
+                Text("Modo dios")
+            } footer: {
+                Text("Libera todas las apps de esta lista, Fingertip incluida. Cambiarlo vuelve a registrar el servidor; después reconectá con `/mcp`.")
+            }
+            .alert("¿Activar el modo dios?", isPresented: $confirmingUnrestricted) {
+                Button("Activar", role: .destructive) { setUnrestricted(true) }
+                Button("Cancelar", role: .cancel) {}
+            } message: {
+                Text(Self.unrestrictedWarning)
+            }
+
+            Section {
+                Text("El MCP no maneja estas apps: escribir en ellas puede correr comandos o exponer secretos. Prendé una para permitirla y reconectá con `/mcp`: el MCP lee las permitidas solo al arrancar, para que una instrucción inyectada no pueda liberarlas a mitad de sesión editando los ajustes. Las que no tenés instaladas no aparecen y siguen bloqueadas.")
+                    .foregroundStyle(.secondary)
+            } header: {
+                Text("Apps bloqueadas")
+            }
+
+            ForEach(BlockedApps.builtIn) { group in
+                let installed = group.bundleIDs.filter { BlockedAppRow.isInstalled($0) }
+                if !installed.isEmpty {
+                    Section(group.name) {
+                        ForEach(installed, id: \.self) { id in
+                            BlockedAppRow(bundleID: id, isAllowed: allowedBinding(id))
+                        }
+                    }
+                    .disabled(unrestricted)
+                }
+            }
+
+            Section {
+                LabeledContent {
+                    Toggle("", isOn: .constant(false)).labelsHidden().disabled(true)
+                } label: {
+                    BlockedAppRow.Label(bundleID: BlockedApps.fingertip)
+                }
+                .help("Sus ajustes tienen estos switches: solo el modo dios la libera.")
+            } header: {
+                Text("Fingertip")
+            } footer: {
+                Text("No se puede permitir sola: desde estos ajustes se libera todo lo demás. Solo el modo dios la libera.")
+            }
+
+            Section {
+                ForEach(settings.extraBlockedApps, id: \.self) { id in
+                    HStack {
+                        BlockedAppRow(bundleID: id, isAllowed: allowedBinding(id))
+                        Button {
+                            settings.extraBlockedAppIDs = settings.extraBlockedApps.filter { $0 != id }
+                            settings.unblockedAppIDs = settings.unblockedApps.filter { $0 != id }
+                        } label: {
+                            Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Quitar de la lista")
+                    }
+                }
+                .disabled(unrestricted)
+                HStack {
+                    if let addError {
+                        Text(addError).foregroundStyle(.orange).font(.callout)
+                    }
+                    Spacer()
+                    Button("Agregar app…") { addingApp = true }
+                }
+            } header: {
+                Text("Agregadas por vos")
+            } footer: {
+                Text("Elegí una app para bloquearla igual que las de arriba. Bloquear vale desde la próxima conexión a esa app, sin reconectar el MCP; quitarla de la lista, como permitir, pide `/mcp`.")
+            }
+            .fileImporter(isPresented: $addingApp, allowedContentTypes: [.application]) { result in
+                if case .success(let url) = result { add(url) }
+            }
+
+            if let saveError {
+                Label(saveError, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
+        }
+    }
+
+    private func allowedBinding(_ id: String) -> Binding<Bool> {
+        Binding(
+            get: { settings.unblockedApps.contains(id) },
+            set: { allowed in
+                var unblocked = settings.unblockedApps.filter { $0 != id }
+                if allowed { unblocked.append(id) }
+                settings.unblockedAppIDs = unblocked
+            }
+        )
+    }
+
+    private func add(_ url: URL) {
+        guard let id = Bundle(url: url)?.bundleIdentifier?.lowercased() else {
+            addError = "No pude leer el bundle id de \(url.lastPathComponent)."
+            return
+        }
+        addError = nil
+        let listed = BlockedApps.builtIn.flatMap(\.bundleIDs) + [BlockedApps.fingertip] + settings.extraBlockedApps
+        guard !listed.contains(id) else {
+            // Already listed: adding it means the user wants it blocked again.
+            settings.unblockedAppIDs = settings.unblockedApps.filter { $0 != id }
+            return
+        }
+        settings.extraBlockedAppIDs = settings.extraBlockedApps + [id]
+    }
+
+    private static let unrestrictedWarning = """
+    Claude va a poder conectarse y escribir en todas las apps bloqueadas: Terminal, iTerm y otras terminales; VS Code, Cursor, Zed, JetBrains y otros editores con terminal; las apps de Claude, Codex y ChatGPT; Script Editor, Automator, Atajos, Raycast y Alfred; esta misma app; Ajustes del Sistema; Acceso a Llaveros, Contraseñas, 1Password y otros gestores; y las que agregaste vos.
+
+    Qué implica:
+    • Todo lo que fingertip lee de la pantalla le llega a Claude como texto. Una instrucción escondida en una web, un mail o un documento puede llevarlo a abrir una terminal y correr un comando con tus permisos: borrar archivos, subir tus datos, instalar algo.
+    • Las contraseñas, tokens y claves que se vean en pantalla pasan a la conversación.
+    • Puede cambiar permisos de privacidad y seguridad en Ajustes del Sistema.
+    • Puede darle órdenes a otros agentes, que actúan con sus propios permisos.
+    • Vale para todos tus proyectos y sesiones de Claude Code, no solo para la tarea de ahora, hasta que lo apagues.
+
+    Si solo necesitás una app, es más seguro desbloquear esa sola en esta lista.
+    """
+
+    /// Re-registers the server with the new value; on failure the switch goes back,
+    /// so it never shows a mode the registration does not have.
+    private func setUnrestricted(_ on: Bool) {
+        let previous = unrestricted
+        unrestricted = on
+        installing = true
+        let key = apiKey
+        Task {
+            // `claude mcp add` blocks on a subprocess; keep it off the main actor.
+            let result = await Task.detached { ClaudeMCPInstaller.install(apiKey: key, unrestricted: on) }.value
+            installing = false
+            installError = result.succeeded ? nil : result.message
+            if !result.succeeded { unrestricted = previous }
+        }
+    }
+}
+
+/// One app of the block list: icon and name when it is installed, the bundle id otherwise.
+private struct BlockedAppRow: View {
+    let bundleID: String
+    @Binding var isAllowed: Bool
+
+    var body: some View {
+        Toggle(isOn: $isAllowed) { Label(bundleID: bundleID) }
+            .accessibilityLabel("Permitir \(bundleID)")
+    }
+
+    static func isInstalled(_ id: String) -> Bool {
+        id == BlockedApps.jetBrainsPrefix || NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) != nil
+    }
+
+    struct Label: View {
+        let bundleID: String
+
+        var body: some View {
+            let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+            HStack(spacing: 8) {
+                if let url {
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                        .resizable()
+                        .frame(width: 20, height: 20)
+                } else {
+                    Image(systemName: "app.dashed").frame(width: 20, height: 20)
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(name(url))
+                    Text(bundleID).font(.caption).foregroundStyle(.secondary)
+                }
+            }
+        }
+
+        private func name(_ url: URL?) -> String {
+            if bundleID == BlockedApps.jetBrainsPrefix { return "IDEs de JetBrains (todos)" }
+            guard let url else { return bundleID }
+            return FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
         }
     }
 }
