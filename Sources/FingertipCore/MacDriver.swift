@@ -605,8 +605,11 @@ actor MacDriver: ScreenDriver {
         guard let app = runningApp() else { throw MacDriverError.notRunning(bundleID) }
         let source = CGEventSource(stateID: .hidSystemState)
         for isDown in [true, false] {
-            CGEvent(keyboardEventSource: source, virtualKey: 0x24, keyDown: isDown)?
-                .postToPid(app.processIdentifier)
+            let event = CGEvent(keyboardEventSource: source, virtualKey: 0x24, keyDown: isDown)
+            // An event from `.hidSystemState` carries the modifiers the user is holding (measured
+            // with ⌘): this Return would go out as ⌘Return. Same in `postKeys` and `click`.
+            event?.flags = []
+            event?.postToPid(app.processIdentifier)
         }
     }
 
@@ -677,8 +680,9 @@ actor MacDriver: ScreenDriver {
         try await bringForward(clickingAt: point)
         let source = CGEventSource(stateID: .hidSystemState)
         for type in [CGEventType.leftMouseDown, .leftMouseUp] {
-            CGEvent(mouseEventSource: source, mouseType: type, mouseCursorPosition: point, mouseButton: .left)?
-                .post(tap: .cghidEventTap)
+            let event = CGEvent(mouseEventSource: source, mouseType: type, mouseCursorPosition: point, mouseButton: .left)
+            event?.flags = [] // Not a ⌘-click when the user holds ⌘ (see `submit`).
+            event?.post(tap: .cghidEventTap)
         }
     }
 
@@ -710,6 +714,7 @@ actor MacDriver: ScreenDriver {
         for key in keys {
             for isDown in [true, false] {
                 let event = CGEvent(keyboardEventSource: source, virtualKey: key.code, keyDown: isDown)
+                event?.flags = [] // A held ⌘ would turn a typed letter into a shortcut (see `submit`).
                 if let text = key.text {
                     event?.keyboardSetUnicodeString(stringLength: text.count, unicodeString: text)
                 }
