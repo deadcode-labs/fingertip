@@ -210,7 +210,10 @@ private struct TestDetailView: View {
                     Group {
                         switch pane {
                         case .video:
+                            // Keyed on `ended`: a player opened mid-test holds an unfinished
+                            // file, so it reloads once a refresh shows the test closed.
                             RecordingPlayer(recording: test.recording, error: test.recordingError)
+                                .id(test.ended)
                         case .step:
                             if let selectedStep {
                                 StepDetail(step: selectedStep)
