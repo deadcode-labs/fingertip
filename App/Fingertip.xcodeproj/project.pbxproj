@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		E558639DE07C51BE0699A9CD /* FingertipCore in Frameworks */ = {isa = PBXBuildFile; productRef = D1DD86059FFE4BBEB7FC2235 /* FingertipCore */; };
+		A1B2C3D4E5F60718293A4B5C /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = A1B2C3D4E5F60718293A4B5E /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,7 @@
 			isa = PBXFrameworksBuildPhase;
 			files = (
 				E558639DE07C51BE0699A9CD /* FingertipCore in Frameworks */,
+				A1B2C3D4E5F60718293A4B5C /* Sparkle in Frameworks */,
 			);
 		};
 /* End PBXFrameworksBuildPhase section */
@@ -68,6 +70,7 @@
 			name = "Fingertip";
 			packageProductDependencies = (
 				D1DD86059FFE4BBEB7FC2235 /* FingertipCore */,
+				A1B2C3D4E5F60718293A4B5E /* Sparkle */,
 			);
 			productName = "Fingertip";
 			productReference = E4FF68505F2FBB5B2DA35D9D /* Fingertip.app */;
@@ -99,6 +102,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				8E99146596AD2294C8A9B220 /* XCLocalSwiftPackageReference "FingertipCore" */,
+				A1B2C3D4E5F60718293A4B5D /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 77AA96C6D6F1F81C9D9196A5 /* Products */;
@@ -276,13 +280,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				DEVELOPMENT_TEAM = AAL663Y363;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -309,13 +314,14 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = "$(MARKETING_VERSION)";
 				DEVELOPMENT_TEAM = AAL663Y363;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -363,10 +369,26 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		A1B2C3D4E5F60718293A4B5D /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.7.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		D1DD86059FFE4BBEB7FC2235 /* FingertipCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FingertipCore;
+		};
+		A1B2C3D4E5F60718293A4B5E /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A1B2C3D4E5F60718293A4B5D /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

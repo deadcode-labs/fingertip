@@ -8,6 +8,11 @@
 #   xcrun notarytool store-credentials fingertip-notary \
 #     --apple-id <tu Apple ID> --team-id AAL663Y363 --password <app-specific password>
 # (la contraseña se genera en appleid.apple.com → Seguridad → Contraseñas de apps)
+#
+# Sparkle signs the DMG with the EdDSA key stored in the login Keychain under
+# the account "fingertip" (its public half is SUPublicEDKey in App/Info.plist).
+# Back it up with:
+#   build/release-dmg/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_keys --account fingertip -x fingertip-sparkle.key
 
 set -e
 
@@ -15,6 +20,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TEAM_ID="AAL663Y363"
 SIGN_IDENTITY="Developer ID Application: Maximiliano Ward (${TEAM_ID})"
 NOTARY_PROFILE="fingertip-notary"
+SPARKLE_ACCOUNT="fingertip"
 
 BUILD_DIR="${REPO_ROOT}/build/release-dmg"
 DIST_DIR="${REPO_ROOT}/dist"
@@ -25,6 +31,8 @@ APP_PATH="${EXPORT_PATH}/Fingertip.app"
 ZIP_PATH="${DIST_DIR}/Fingertip.zip"
 DMG_PATH="${DIST_DIR}/Fingertip.dmg"
 STAGING_DIR="${DIST_DIR}/staging"
+PACKAGES_DIR="${BUILD_DIR}/SourcePackages"
+SPARKLE_BIN="${PACKAGES_DIR}/artifacts/sparkle/Sparkle/bin"
 
 rm -rf "${BUILD_DIR}" "${DIST_DIR}"
 mkdir -p "${BUILD_DIR}" "${DIST_DIR}"
@@ -35,6 +43,7 @@ xcodebuild archive \
   -scheme Fingertip \
   -configuration Release \
   -archivePath "${ARCHIVE_PATH}" \
+  -clonedSourcePackagesDirPath "${PACKAGES_DIR}" \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="Developer ID Application" \
   DEVELOPMENT_TEAM="${TEAM_ID}"
@@ -87,4 +96,16 @@ echo "==> Verificando Gatekeeper"
 spctl -a -t open --context context:primary-signature -v "${DMG_PATH}"
 spctl -a -vvv "${APP_PATH}"
 
-echo "==> Listo: ${DMG_PATH}"
+# The feed is SUFeedURL = releases/latest/download/appcast.xml, so every
+# release carries its own appcast next to the DMG it points at.
+VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "${APP_PATH}/Contents/Info.plist")"
+echo "==> Firmando para Sparkle y generando el appcast (v${VERSION})"
+"${SPARKLE_BIN}/generate_appcast" \
+  --account "${SPARKLE_ACCOUNT}" \
+  --download-url-prefix "https://github.com/deadcode-labs/fingertip/releases/download/v${VERSION}/" \
+  -o "${DIST_DIR}/appcast.xml" \
+  "${DIST_DIR}"
+
+echo "==> Listo: ${DMG_PATH} y ${DIST_DIR}/appcast.xml"
+echo "    Subí los dos al release v${VERSION}:"
+echo "    gh release upload v${VERSION} \"${DMG_PATH}\" \"${DIST_DIR}/appcast.xml\""
