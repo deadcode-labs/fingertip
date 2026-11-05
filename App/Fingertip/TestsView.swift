@@ -23,17 +23,21 @@ struct TestsView: View {
     var body: some View {
         NavigationSplitView {
             TestListView(tests: tests, selection: $selection, loading: loading)
-                .navigationSplitViewColumnWidth(min: 240, ideal: 300)
+                // A max, so a width AppKit restored from a bad session can't swallow the detail.
+                .navigationSplitViewColumnWidth(min: 240, ideal: 300, max: 420)
         } detail: {
-            if let selected {
-                TestDetailView(test: selected)
-            } else {
-                ContentUnavailableView(
-                    "Ninguna prueba elegida",
-                    systemImage: "list.bullet.rectangle",
-                    description: Text("Elegí una prueba de la lista para ver su video y sus pasos.")
-                )
+            Group {
+                if let selected {
+                    TestDetailView(test: selected)
+                } else {
+                    ContentUnavailableView(
+                        "Ninguna prueba elegida",
+                        systemImage: "list.bullet.rectangle",
+                        description: Text("Elegí una prueba de la lista para ver su video y sus pasos.")
+                    )
+                }
             }
+            .frame(minWidth: 600)
         }
         .toolbar {
             ToolbarItem {
@@ -171,23 +175,39 @@ private struct TestDetailView: View {
     let test: TestSummary
     @State private var steps: [TestStep] = []
     @State private var stepSelection: Int?
+    @State private var pane = Pane.video
+
+    private enum Pane { case video, step }
 
     private var selectedStep: TestStep? {
         steps.first { $0.id == stepSelection }
     }
 
+    // Fixed stacks rather than `VSplitView`/`HSplitView`: inside a `NavigationSplitView`
+    // those took their children's ideal sizes and spilled the detail past the window.
     var body: some View {
         VStack(spacing: 0) {
             TestHeader(test: test)
                 .padding()
             Divider()
-            VSplitView {
-                RecordingPlayer(recording: test.recording, error: test.recordingError)
-                    .frame(minHeight: 160, idealHeight: 260)
-                HSplitView {
-                    StepList(test: test, steps: steps, selection: $stepSelection)
-                        .frame(minWidth: 260, idealWidth: 340)
-                    Group {
+            HStack(spacing: 0) {
+                StepList(test: test, steps: steps, selection: $stepSelection)
+                    .frame(width: 320)
+                Divider()
+                VStack(spacing: 0) {
+                    Picker("Vista", selection: $pane) {
+                        Text("Video").tag(Pane.video)
+                        Text("Paso").tag(Pane.step)
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
+                    .padding(8)
+                    Divider()
+                    switch pane {
+                    case .video:
+                        RecordingPlayer(recording: test.recording, error: test.recordingError)
+                    case .step:
                         if let selectedStep {
                             StepDetail(step: selectedStep)
                         } else {
@@ -198,13 +218,15 @@ private struct TestDetailView: View {
                             )
                         }
                     }
-                    .frame(minWidth: 300, maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(minHeight: 220)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         // A refreshed summary differs (new `ended`, verdict…), so this also reloads the steps.
         .task(id: test) { await loadSteps() }
+        .onChange(of: stepSelection) { _, step in
+            if step != nil { pane = .step }
+        }
     }
 
     private func loadSteps() async {
@@ -311,11 +333,22 @@ private struct PlayerView: NSViewRepresentable {
         let view = AVPlayerView()
         view.controlsStyle = .inline
         view.player = player
+        // Its intrinsic size is the video's pixel size (a Retina recording is thousands of
+        // points wide); left as the ideal size, it widens the whole detail past the window.
+        for orientation in [NSLayoutConstraint.Orientation.horizontal, .vertical] {
+            view.setContentHuggingPriority(.defaultLow, for: orientation)
+            view.setContentCompressionResistancePriority(.defaultLow, for: orientation)
+        }
         return view
     }
 
     func updateNSView(_ view: AVPlayerView, context: Context) {
         if view.player !== player { view.player = player }
+    }
+
+    /// Takes whatever it is offered; the video letterboxes inside.
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView: AVPlayerView, context: Context) -> CGSize? {
+        CGSize(width: proposal.width ?? 480, height: proposal.height ?? 260)
     }
 }
 
@@ -389,7 +422,7 @@ private struct StepDetail: View {
     @State private var image: NSImage?
 
     var body: some View {
-        VSplitView {
+        VStack(spacing: 0) {
             Group {
                 if let image {
                     Image(nsImage: image)
@@ -410,8 +443,9 @@ private struct StepDetail: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .frame(minHeight: 160)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
+            Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
                     if let at = step.at {
@@ -432,7 +466,7 @@ private struct StepDetail: View {
                 .textSelection(.enabled)
                 .padding()
             }
-            .frame(minHeight: 120)
+            .frame(height: 200)
         }
         .task(id: step.screen) { await loadImage() }
     }
