@@ -48,4 +48,4 @@ xcodebuild -project App/Fingertip.xcodeproj -scheme Fingertip -destination 'plat
 
 Building is the whole automated check. To verify behaviour, drive a device: through the `fingertip` MCP tools if this session has them, by piping JSON-RPC lines into `.build/debug/fingertip-mcp`, or with sim-use directly (`sim-use ui --device <UDID>`). After changing the package, rebuild in release and reconnect the MCP (`/mcp`).
 
-Environment: Xcode 27.0 · Swift 6.4 · macOS 27.0 · sim-use 0.14.0 · iOS 27.0 and 26.5 simulator runtimes.
+Environment: Xcode 27.0 · Swift 6.4 · macOS 27.0 · sim-use 0.16.0 · iOS 27.0 simulator runtime.
