@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- The app updates itself through Sparkle: it checks once a day, or from "Buscar actualizaciones…" in the menu bar or Settings → General → Actualizaciones, where a switch turns the automatic checks off. The update replaces the whole app, bundled `fingertip-mcp` included. The feed is the `appcast.xml` of the latest GitHub release; `scripts/release-dmg.sh` signs the DMG with the EdDSA key in the login Keychain (account `fingertip`) and writes that appcast, to be uploaded next to `Fingertip.dmg`. Installs older than this version update by hand once.
+
+### Changed
+- `CFBundleVersion` follows the marketing version instead of staying at `1`, which Sparkle compares between releases.
+
 ## [0.5.0] - 2026-11-05
 
 ### Added

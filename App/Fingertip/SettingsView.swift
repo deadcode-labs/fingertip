@@ -82,6 +82,7 @@ private struct GeneralPane: View {
     @State private var installResult: ClaudeMCPInstaller.Result?
     @State private var installing = false
     @AppStorage(ClaudeMCPInstaller.unrestrictedKey) private var unrestricted = false
+    @State private var checksForUpdates = AppUpdater.shared.automaticallyChecksForUpdates
 
     private var mcpPath: String {
         Bundle.main.bundleURL.appending(path: "Contents/Resources/fingertip-mcp").path
@@ -130,6 +131,20 @@ private struct GeneralPane: View {
                 Text("Ventanas")
             } footer: {
                 Text("Habilita `bring_to_front`: activa la app y, si la ventana está en otro escritorio, cambia a ese escritorio. Mueve lo que estás viendo. El MCP lo lee en cada uso: no hace falta reconectar.")
+            }
+
+            Section {
+                Toggle("Buscar actualizaciones automáticamente", isOn: $checksForUpdates)
+                    .onChange(of: checksForUpdates) { _, new in
+                        AppUpdater.shared.automaticallyChecksForUpdates = new
+                    }
+                LabeledContent("Versión \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")") {
+                    Button("Buscar ahora") { AppUpdater.shared.checkForUpdates() }
+                }
+            } header: {
+                Text("Actualizaciones")
+            } footer: {
+                Text("Al actualizarse la app también se actualiza el `fingertip-mcp` que trae: reconectá con `/mcp`.")
             }
 
             if let saveError {

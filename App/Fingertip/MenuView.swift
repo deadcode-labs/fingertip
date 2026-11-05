@@ -27,6 +27,10 @@ struct MenuView: View {
         }
         .keyboardShortcut(",")
 
+        Button("Buscar actualizaciones…") {
+            AppUpdater.shared.checkForUpdates()
+        }
+
         Button("Configuración inicial…") {
             NSApp.activate(ignoringOtherApps: true)
             openWindow(id: "onboarding")

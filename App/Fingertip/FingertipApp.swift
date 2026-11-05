@@ -10,6 +10,7 @@ import SwiftUI
 struct FingertipApp: App {
     init() {
         Task { await OverlayBeaconServer.shared.start() }
+        _ = AppUpdater.shared
     }
 
     var body: some Scene {
