@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-05
+
 ### Added
 - Pruebas window in the app (menu bar → "Pruebas…"): lists the saved tests newest first with name, date, target, duration and verdict (passed, failed, none, in progress); for one test, its notes, the recording in a player and each step with its arguments, error code, duration, the screen after it and the full reply, plus "Mostrar en Finder" for the test and its Jev runs. Read-only; missing or broken files show as such. ⌘R refreshes.
 - Tests: `connect` with `test: "<name>"` keeps everything the test produces in `~/Library/Application Support/Fingertip/tests/<date>-<name>/` — one trace line per tool call with the screen after it, a video of the whole test and the `run_instruction` runs — and `end_test(passed, notes)` closes it with a verdict. A new `connect` or the server closing closes it without one. A plain `connect` writes nothing, as before. Typed text is redacted in the trace, as in the toast and Jev's log.
@@ -116,7 +118,8 @@ First release. fingertip lets an agent see and drive an iOS simulator or a macOS
 ### Removed
 - `MaestroDriver`, the XCUITest hierarchy parsing and Maestro as a dependency.
 
-[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/deadcode-labs/fingertip/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/deadcode-labs/fingertip/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/deadcode-labs/fingertip/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/deadcode-labs/fingertip/compare/v0.2.1...v0.2.2
