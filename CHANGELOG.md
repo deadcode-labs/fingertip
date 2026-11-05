@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-05
+
 ### Added
 - The app updates itself through Sparkle: it checks once a day, or from "Buscar actualizaciones…" in the menu bar or Settings → General → Actualizaciones, where a switch turns the automatic checks off. The update replaces the whole app, bundled `fingertip-mcp` included. The feed is the `appcast.xml` of the latest GitHub release; `scripts/release-dmg.sh` signs the DMG with the EdDSA key in the login Keychain (account `fingertip`) and writes that appcast, to be uploaded next to `Fingertip.dmg`. Installs older than this version update by hand once.
 
@@ -124,7 +126,8 @@ First release. fingertip lets an agent see and drive an iOS simulator or a macOS
 ### Removed
 - `MaestroDriver`, the XCUITest hierarchy parsing and Maestro as a dependency.
 
-[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/deadcode-labs/fingertip/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/deadcode-labs/fingertip/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/deadcode-labs/fingertip/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/deadcode-labs/fingertip/compare/v0.2.2...v0.3.0
