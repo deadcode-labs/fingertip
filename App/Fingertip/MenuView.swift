@@ -16,6 +16,11 @@ struct MenuView: View {
             Divider()
         }
 
+        Button("Pruebas…") {
+            NSApp.activate(ignoringOtherApps: true)
+            openWindow(id: "tests")
+        }
+
         Button("Ajustes…") {
             NSApp.activate(ignoringOtherApps: true)
             openSettings()
