@@ -28,5 +28,11 @@ struct FingertipApp: App {
         .defaultLaunchBehavior(
             UserDefaults.standard.bool(forKey: OnboardingView.completedKey) ? .suppressed : .presented
         )
+
+        Window("Pruebas", id: "tests") {
+            TestsView()
+        }
+        .defaultSize(width: 1100, height: 760)
+        .defaultLaunchBehavior(.suppressed)
     }
 }

@@ -1,0 +1,443 @@
+//
+//  TestsView.swift
+//  Fingertip
+//
+//  The "Pruebas" window: the tests the MCP saved under `TestSession.directory`, and for
+//  one of them its verdict, video and steps with the screen after each step. Read-only;
+//  everything it shows comes from `TestLibrary`.
+//
+
+import AVKit
+import FingertipCore
+import SwiftUI
+
+struct TestsView: View {
+    @State private var tests: [TestSummary] = []
+    @State private var selection: URL?
+    @State private var loading = false
+
+    private var selected: TestSummary? {
+        tests.first { $0.id == selection }
+    }
+
+    var body: some View {
+        NavigationSplitView {
+            TestListView(tests: tests, selection: $selection, loading: loading)
+                .navigationSplitViewColumnWidth(min: 240, ideal: 300)
+        } detail: {
+            if let selected {
+                TestDetailView(test: selected)
+            } else {
+                ContentUnavailableView(
+                    "Ninguna prueba elegida",
+                    systemImage: "list.bullet.rectangle",
+                    description: Text("Elegí una prueba de la lista para ver su video y sus pasos.")
+                )
+            }
+        }
+        .toolbar {
+            ToolbarItem {
+                Button("Actualizar", systemImage: "arrow.clockwise") {
+                    Task { await reload() }
+                }
+                .keyboardShortcut("r")
+                .disabled(loading)
+            }
+        }
+        .frame(minWidth: 900, minHeight: 560)
+        .task { await reload() }
+    }
+
+    private func reload() async {
+        loading = true
+        defer { loading = false }
+        let directory = TestSession.directory
+        let fresh = await Task.detached(priority: .userInitiated) {
+            TestLibrary.list(in: directory)
+        }.value
+        tests = fresh
+        if let selection, !fresh.contains(where: { $0.id == selection }) {
+            self.selection = nil
+        }
+    }
+}
+
+// MARK: - List
+
+private struct TestListView: View {
+    let tests: [TestSummary]
+    @Binding var selection: URL?
+    let loading: Bool
+
+    var body: some View {
+        List(tests, selection: $selection) { test in
+            TestRow(test: test)
+        }
+        .overlay {
+            if tests.isEmpty && !loading {
+                ContentUnavailableView(
+                    "Sin pruebas",
+                    systemImage: "tray",
+                    description: Text("Las pruebas que guarda el MCP con connect(test:) aparecen aquí.")
+                )
+            }
+        }
+    }
+}
+
+private struct TestRow: View {
+    let test: TestSummary
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            VerdictMark(verdict: test.verdict)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(test.name)
+                    .lineLimit(1)
+                HStack(spacing: 6) {
+                    if let started = test.started {
+                        Text(started, format: .dateTime.day().month().hour().minute())
+                    }
+                    if let target = test.target {
+                        Text(target).lineLimit(1)
+                    }
+                    if let duration = test.duration {
+                        Text(TestFormat.duration(duration))
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                if let problem = test.problem {
+                    Text(problem)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+            }
+        }
+        .padding(.vertical, 2)
+    }
+}
+
+private struct VerdictMark: View {
+    let verdict: TestSummary.Verdict
+    var showsTitle = false
+
+    var body: some View {
+        if showsTitle {
+            Label(title, systemImage: symbol)
+                .foregroundStyle(color)
+        } else {
+            Image(systemName: symbol)
+                .foregroundStyle(color)
+                .help(title)
+                .accessibilityLabel(title)
+        }
+    }
+
+    private var title: String {
+        switch verdict {
+        case .passed: "Pasó"
+        case .failed: "Falló"
+        case .none: "Sin veredicto"
+        case .inProgress: "En curso"
+        case .unknown: "test.json ilegible"
+        }
+    }
+
+    private var symbol: String {
+        switch verdict {
+        case .passed: "checkmark.circle.fill"
+        case .failed: "xmark.circle.fill"
+        case .none: "minus.circle"
+        case .inProgress: "clock"
+        case .unknown: "exclamationmark.triangle.fill"
+        }
+    }
+
+    private var color: Color {
+        switch verdict {
+        case .passed: .green
+        case .failed: .red
+        case .none: .secondary
+        case .inProgress: .blue
+        case .unknown: .orange
+        }
+    }
+}
+
+// MARK: - Detail
+
+private struct TestDetailView: View {
+    let test: TestSummary
+    @State private var steps: [TestStep] = []
+    @State private var stepSelection: Int?
+
+    private var selectedStep: TestStep? {
+        steps.first { $0.id == stepSelection }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            TestHeader(test: test)
+                .padding()
+            Divider()
+            VSplitView {
+                RecordingPlayer(recording: test.recording, error: test.recordingError)
+                    .frame(minHeight: 160, idealHeight: 260)
+                HSplitView {
+                    StepList(test: test, steps: steps, selection: $stepSelection)
+                        .frame(minWidth: 260, idealWidth: 340)
+                    Group {
+                        if let selectedStep {
+                            StepDetail(step: selectedStep)
+                        } else {
+                            ContentUnavailableView(
+                                "Ningún paso elegido",
+                                systemImage: "rectangle.on.rectangle",
+                                description: Text("Elegí un paso para ver su pantalla y su resultado.")
+                            )
+                        }
+                    }
+                    .frame(minWidth: 300, maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .frame(minHeight: 220)
+            }
+        }
+        // A refreshed summary differs (new `ended`, verdict…), so this also reloads the steps.
+        .task(id: test) { await loadSteps() }
+    }
+
+    private func loadSteps() async {
+        let test = test
+        let fresh = await Task.detached(priority: .userInitiated) {
+            TestLibrary.steps(of: test)
+        }.value
+        steps = fresh
+        if let stepSelection, !fresh.contains(where: { $0.id == stepSelection }) {
+            self.stepSelection = nil
+        }
+    }
+}
+
+private struct TestHeader: View {
+    let test: TestSummary
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(test.name)
+                    .font(.title2.bold())
+                    .textSelection(.enabled)
+                VerdictMark(verdict: test.verdict, showsTitle: true)
+                    .font(.headline)
+                Spacer()
+                if test.hasJevRuns {
+                    Button("Runs de Jev en Finder") { reveal(test.jevDirectory) }
+                }
+                Button("Mostrar en Finder") { reveal(test.folder) }
+            }
+
+            Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
+                row("Objetivo", test.target ?? "—")
+                row("Inicio", test.started.map(TestFormat.date) ?? "—")
+                row("Fin", test.ended.map(TestFormat.date) ?? "sin terminar")
+                if let duration = test.duration {
+                    row("Duración", TestFormat.duration(duration))
+                }
+            }
+            .font(.callout)
+
+            if let notes = test.notes, !notes.isEmpty {
+                Text(notes)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if let problem = test.problem {
+                Label(problem, systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
+            if let error = test.recordingError {
+                Label("Error de grabación: \(error)", systemImage: "video.slash")
+                    .foregroundStyle(.red)
+                    .textSelection(.enabled)
+            }
+        }
+    }
+
+    private func row(_ title: String, _ value: String) -> some View {
+        GridRow {
+            Text(title).foregroundStyle(.secondary)
+            Text(value).textSelection(.enabled)
+        }
+    }
+
+    private func reveal(_ url: URL) {
+        NSWorkspace.shared.activateFileViewerSelecting([url])
+    }
+}
+
+private struct RecordingPlayer: View {
+    let recording: URL?
+    let error: String?
+    @State private var player: AVPlayer?
+
+    var body: some View {
+        Group {
+            if let player {
+                VideoPlayer(player: player)
+            } else {
+                ContentUnavailableView(
+                    "Sin video",
+                    systemImage: "video.slash",
+                    description: Text(error == nil ? "Esta prueba no tiene recording.mov." : "La grabación falló.")
+                )
+            }
+        }
+        .task(id: recording) {
+            player?.pause()
+            player = recording.map { AVPlayer(url: $0) }
+        }
+        .onDisappear { player?.pause() }
+    }
+}
+
+private struct StepList: View {
+    let test: TestSummary
+    let steps: [TestStep]
+    @Binding var selection: Int?
+
+    var body: some View {
+        List(steps, selection: $selection) { step in
+            StepRow(step: step)
+        }
+        .overlay {
+            if steps.isEmpty {
+                ContentUnavailableView(
+                    "Sin pasos",
+                    systemImage: "list.number",
+                    description: Text(test.hasTrace ? "trace.jsonl está vacío." : "Falta trace.jsonl.")
+                )
+            }
+        }
+    }
+}
+
+private struct StepRow: View {
+    let step: TestStep
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("\(step.id + 1)")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                if let problem = step.problem {
+                    Label(problem, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                } else {
+                    Text(step.tool).bold()
+                }
+                Spacer(minLength: 4)
+                if let code = step.errorCode {
+                    Text(code)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(.red)
+                }
+                if let ms = step.milliseconds {
+                    Text("\(ms) ms")
+                        .font(.caption)
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+            }
+            let detail = step.problem == nil ? argumentsText : step.raw
+            if !detail.isEmpty {
+                Text(detail)
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var argumentsText: String {
+        step.arguments.map { "\($0.key): \($0.value)" }.joined(separator: "  ")
+    }
+}
+
+private struct StepDetail: View {
+    let step: TestStep
+    @State private var image: NSImage?
+
+    var body: some View {
+        VSplitView {
+            Group {
+                if let image {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .padding(8)
+                } else if step.screenMissing {
+                    ContentUnavailableView(
+                        "Falta la pantalla",
+                        systemImage: "photo.badge.exclamationmark",
+                        description: Text("\(step.screenName ?? "") no está en la carpeta de la prueba.")
+                    )
+                } else if step.screen == nil {
+                    ContentUnavailableView("Sin pantalla", systemImage: "photo")
+                } else {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .frame(minHeight: 160)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    if let at = step.at {
+                        Text(TestFormat.date(at))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    if !step.arguments.isEmpty {
+                        ForEach(step.arguments, id: \.key) { argument in
+                            Text("\(argument.key): \(argument.value)")
+                        }
+                        .font(.callout.monospaced())
+                    }
+                    Text(step.problem == nil ? step.result : step.raw)
+                        .font(.body.monospaced())
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .textSelection(.enabled)
+                .padding()
+            }
+            .frame(minHeight: 120)
+        }
+        .task(id: step.screen) { await loadImage() }
+    }
+
+    private func loadImage() async {
+        image = nil
+        guard let url = step.screen else { return }
+        let data = await Task.detached(priority: .userInitiated) {
+            try? Data(contentsOf: url)
+        }.value
+        image = data.flatMap(NSImage.init(data:))
+    }
+}
+
+// MARK: - Formatting
+
+private enum TestFormat {
+    static func date(_ date: Date) -> String {
+        date.formatted(date: .abbreviated, time: .standard)
+    }
+
+    static func duration(_ seconds: TimeInterval) -> String {
+        Duration.seconds(seconds.rounded())
+            .formatted(.units(allowed: [.hours, .minutes, .seconds], width: .abbreviated))
+    }
+}
