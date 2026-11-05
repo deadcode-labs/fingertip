@@ -28,7 +28,9 @@ struct TestsView: View {
         } detail: {
             Group {
                 if let selected {
+                    // One identity per test, so the picked step and pane don't carry over.
                     TestDetailView(test: selected)
+                        .id(selected.id)
                 } else {
                     ContentUnavailableView(
                         "Ninguna prueba elegida",
@@ -204,20 +206,24 @@ private struct TestDetailView: View {
                     .fixedSize()
                     .padding(8)
                     Divider()
-                    switch pane {
-                    case .video:
-                        RecordingPlayer(recording: test.recording, error: test.recordingError)
-                    case .step:
-                        if let selectedStep {
-                            StepDetail(step: selectedStep)
-                        } else {
-                            ContentUnavailableView(
-                                "Ningún paso elegido",
-                                systemImage: "rectangle.on.rectangle",
-                                description: Text("Elegí un paso para ver su pantalla y su resultado.")
-                            )
+                    // Fills the height, so an empty state doesn't pull the picker down.
+                    Group {
+                        switch pane {
+                        case .video:
+                            RecordingPlayer(recording: test.recording, error: test.recordingError)
+                        case .step:
+                            if let selectedStep {
+                                StepDetail(step: selectedStep)
+                            } else {
+                                ContentUnavailableView(
+                                    "Ningún paso elegido",
+                                    systemImage: "rectangle.on.rectangle",
+                                    description: Text("Elegí un paso para ver su pantalla y su resultado.")
+                                )
+                            }
                         }
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
