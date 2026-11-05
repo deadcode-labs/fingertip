@@ -76,6 +76,8 @@ public final class JevAgent {
     public private(set) var history: [String] = []
     /// Archivo JSONL de la corrida actual, para poder ir a mirarlo.
     public private(set) var logPath: String?
+    /// Where the next run is logged; nil is the settings' runs folder. A test points it at its `jev/`.
+    public var runsDirectory: URL?
     public private(set) var decision: JevDecision?
     public private(set) var outcome: Outcome?
     public private(set) var failure: (any FingertipError)?
@@ -127,7 +129,7 @@ public final class JevAgent {
         outcome = nil
         drilledRegion = nil
 
-        let log = RunLog()
+        let log = RunLog(directory: runsDirectory)
         self.log = log
         logPath = log.path
         watchTask = watchScreen()

@@ -22,3 +22,9 @@ Packages/
 odd/
 .claude/
 CLAUDE.local.md
+
+# ODD-H
+.odd/state.json
+.odd/ledger.jsonl
+.odd/hash.index
+.odd/*.tmp

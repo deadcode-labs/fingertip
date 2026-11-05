@@ -24,6 +24,8 @@ nonisolated enum ToolError: FingertipError {
     case appVanished(String)
     case timedOut(String)
     case bringToFrontDisabled
+    case noTest
+    case testInProgress(String)
 
     var code: String {
         switch self {
@@ -34,6 +36,8 @@ nonisolated enum ToolError: FingertipError {
         case .appVanished: "app_vanished"
         case .timedOut: "timed_out"
         case .bringToFrontDisabled: "bring_to_front_disabled"
+        case .noTest: "no_test"
+        case .testInProgress: "test_in_progress"
         }
     }
 
@@ -46,10 +50,13 @@ nonisolated enum ToolError: FingertipError {
     var errorDescription: String? {
         switch self {
         case .invalidArguments(let message), .blockedApp(let message), .notConnected(let message),
-             .appNotFound(let message), .appVanished(let message), .timedOut(let message):
+             .appNotFound(let message), .appVanished(let message), .timedOut(let message),
+             .testInProgress(let message):
             message
         case .bringToFrontDisabled:
             "Traer ventanas al frente está desactivado: lo activa la persona en Fingertip → Ajustes → General → Ventanas. No hace falta reconectar."
+        case .noTest:
+            "No hay ninguna prueba abierta: se abre con `connect` y `test`."
         }
     }
 }
@@ -65,11 +72,15 @@ final class Session {
 
     /// Closes what outlives a call: a recording left open would leave an unplayable `.mov`.
     func shutdown() async {
+        // Before disconnecting: the test's video and verdict must be closed while the driver is there.
+        _ = await closeTest(passed: nil, notes: nil)
         await inspector.disconnect()
     }
     private lazy var agent = JevAgent(inspector: inspector)
     private let simctl = Simctl()
     private var target: Target?
+    /// The test opened by `connect(test:)`; while it is open every call goes to its trace.
+    private var test: TestSession?
     /// Region `read_screen` was pointed at; every outline shows only it until a whole read.
     private var focusRegion: String?
     /// Past this many elements the outline suggests reading by region.
@@ -92,7 +103,8 @@ final class Session {
                 properties: [
                     "udid": ["type": "string", "description": "UDID del simulador."],
                     "bundle_id": ["type": "string", "description": "Bundle id de la app de macOS."],
-                    "app_path": ["type": "string", "description": "Ruta al .app, cuando hay más de una copia con el mismo bundle id."]
+                    "app_path": ["type": "string", "description": "Ruta al .app, cuando hay más de una copia con el mismo bundle id."],
+                    "test": ["type": "string", "description": "Solo si estás probando: nombre de la prueba. Abre una carpeta que guarda cada llamada, la pantalla después de cada una, un video de toda la prueba y las corridas de Jev, hasta `end_test`. Sin `test`, usar la app no deja nada en disco."]
                 ],
                 handler: { await self.connect($0) }
             ),
@@ -250,8 +262,89 @@ final class Session {
                 ],
                 required: ["instruction"],
                 handler: { await self.runInstruction($0) }
+            ),
+            Tool(
+                name: "end_test",
+                description: "Cierra la prueba abierta con `connect(test:)` con su veredicto: termina el video y devuelve la carpeta. Un `connect` nuevo o el cierre del servidor también la cierran, sin veredicto.",
+                properties: [
+                    "passed": ["type": "boolean", "description": "Si la prueba pasó."],
+                    "notes": ["type": "string", "description": "Qué se probó y, si falló, qué se vio."]
+                ],
+                required: ["passed"],
+                handler: { await self.endTest($0) }
             )
-        ]
+        ].map(traced)
+    }
+
+    // MARK: - Tests
+
+    /// The call as is, plus a trace line when a test is open before or after it: the `connect`
+    /// that opens a test is its first line, and the one that closes it is the last.
+    private func traced(_ tool: Tool) -> Tool {
+        var traced = tool
+        traced.handler = { arguments in
+            let open = self.test
+            let started = ContinuousClock.now
+            let result = await tool.handler(arguments)
+            guard let test = self.test ?? open else { return result }
+            let elapsed = ContinuousClock.now - started
+            let screen = try? await self.inspector.driver?.screenshot()
+            let text = result.content.compactMap { $0["text"] as? String }.joined(separator: "\n")
+            let code = (result.structured?["error"] as? [String: Any])?["code"] as? String
+            await test.record(tool: tool.name, arguments: arguments, text: text, errorCode: code,
+                              milliseconds: Int(elapsed / .milliseconds(1)), screen: screen)
+            return result
+        }
+        return traced
+    }
+
+    /// A failed folder or recording does not fail the `connect`: the device is already there.
+    private func openTest(_ name: String, on target: Target) async -> String {
+        let test: TestSession
+        do {
+            test = try TestSession(name: name, target: Self.describe(target))
+        } catch {
+            return "No pude crear la carpeta de la prueba (\(error.localizedDescription)); sigo sin registrar."
+        }
+        self.test = test
+        agent.runsDirectory = test.jevDirectory
+        var lines = ["Prueba «\(name)» abierta: \(test.folder.path)"]
+        do {
+            try await inspector.driver?.startRecording(to: test.recording)
+            lines.append("Grabando la prueba entera. Cerrala con `end_test`.")
+        } catch {
+            let reason = fingertipError(error).errorDescription ?? "\(error)"
+            test.recordingFailed(reason)
+            lines.append("Sin video: \(reason)")
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    /// Stops the test's video and writes its verdict; nil when no test is open.
+    private func closeTest(passed: Bool?, notes: String?) async -> TestSession? {
+        guard let test else { return nil }
+        self.test = nil
+        agent.runsDirectory = nil
+        if let driver = inspector.driver {
+            do {
+                _ = try await driver.stopRecording()
+            } catch RecordingError.notRecording {
+                // It never started: `test.json` already says why.
+            } catch {
+                test.recordingFailed(fingertipError(error).errorDescription ?? "\(error)")
+            }
+        }
+        test.finish(passed: passed, notes: notes)
+        return test
+    }
+
+    private func endTest(_ arguments: [String: Any]) async -> ToolResult {
+        guard test != nil else { return .error(ToolError.noTest) }
+        guard let passed = arguments["passed"] as? Bool else { return .invalid("Falta `passed`: si la prueba pasó.") }
+        guard let test = await closeTest(passed: passed, notes: arguments["notes"] as? String) else {
+            return .error(ToolError.noTest)
+        }
+        return .text("Prueba «\(test.name)» cerrada: \(passed ? "pasó" : "falló").\nCarpeta: \(test.folder.path)")
     }
 
     // MARK: - Status toast
@@ -287,6 +380,7 @@ final class Session {
         case "relaunch_app": return "Relanzando \(arguments["bundle_id"] as? String ?? "la app")"
         case "terminate_app": return "Cerrando \(arguments["bundle_id"] as? String ?? "la app")"
         case "run_instruction": return "Jev: corriendo una instrucción"
+        case "end_test": return (arguments["passed"] as? Bool ?? false) ? "Prueba cerrada: pasó" : "Prueba cerrada: falló"
         default: return tool
         }
     }
@@ -395,7 +489,19 @@ final class Session {
                 }
             }
         }
-        return await connect(to: target)
+        // A new `connect` closes the open test whether or not it opens another.
+        let closed = await closeTest(passed: nil, notes: nil)
+        var result = await connect(to: target)
+        var notes: [String] = []
+        if let closed { notes.append("Se cerró la prueba «\(closed.name)» sin veredicto: \(closed.folder.path)") }
+        if let name = (arguments["test"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !name.isEmpty, inspector.connectionState == .ready {
+            notes.append(await openTest(name, on: target))
+        }
+        if !notes.isEmpty, let text = result.content.first?["text"] as? String {
+            result.content[0]["text"] = notes.joined(separator: "\n") + "\n\n" + text
+        }
+        return result
     }
 
     private func connect(to target: Target) async -> ToolResult {
@@ -745,6 +851,7 @@ final class Session {
     // MARK: - Recording
 
     private func startRecording() async -> ToolResult {
+        if let test { return .error(ToolError.testInProgress("La prueba «\(test.name)» ya se está grabando entera en \(test.recording.path); el video se cierra con `end_test`.")) }
         if let failure = await ensureConnected() { return failure }
         guard let driver = inspector.driver else { return .error(ToolError.notConnected("No hay dispositivo conectado.")) }
         // The folder chosen in the Fingertip app, read per call like the screenshots one.
@@ -760,6 +867,7 @@ final class Session {
     }
 
     private func stopRecording() async -> ToolResult {
+        if let test { return .error(ToolError.testInProgress("El video de la prueba «\(test.name)» se cierra con `end_test`, no con `stop_recording`.")) }
         // No `ensureConnected`: stopping must not connect to anything.
         guard let driver = inspector.driver else { return .error(RecordingError.notRecording) }
         do {
