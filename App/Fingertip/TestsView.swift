@@ -284,7 +284,7 @@ private struct RecordingPlayer: View {
     var body: some View {
         Group {
             if let player {
-                VideoPlayer(player: player)
+                PlayerView(player: player)
             } else {
                 ContentUnavailableView(
                     "Sin video",
@@ -298,6 +298,24 @@ private struct RecordingPlayer: View {
             player = recording.map { AVPlayer(url: $0) }
         }
         .onDisappear { player?.pause() }
+    }
+}
+
+/// AppKit's `AVPlayerView`, not SwiftUI's `VideoPlayer`: on macOS 27.0 instantiating
+/// `VideoPlayer`'s generic metadata in `_AVKit_SwiftUI` aborts the app
+/// (`getSuperclassMetadata` fatal error) as soon as the detail appears.
+private struct PlayerView: NSViewRepresentable {
+    let player: AVPlayer
+
+    func makeNSView(context: Context) -> AVPlayerView {
+        let view = AVPlayerView()
+        view.controlsStyle = .inline
+        view.player = player
+        return view
+    }
+
+    func updateNSView(_ view: AVPlayerView, context: Context) {
+        if view.player !== player { view.player = player }
     }
 }
 
