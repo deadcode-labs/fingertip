@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- The app is in English, with a Spanish translation that macOS picks when Spanish is the preferred language. Its strings live in `App/Fingertip/Localizable.xcstrings`, with English as the source language.
+
+### Changed
+- The MCP speaks English: server instructions, tool descriptions, error messages and the toast's status texts. Jev's prompts and the data tokens the screen readers emit are unchanged.
+
 ## [0.6.0] - 2026-11-05
 
 ### Added

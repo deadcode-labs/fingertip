@@ -108,59 +108,59 @@ nonisolated enum MacDriverError: FingertipError {
     var errorDescription: String? {
         switch self {
         case .notTrusted:
-            "Falta el permiso de Accesibilidad. Dáselo al proceso que corre (la app o la terminal de Claude Code) en Ajustes del Sistema → Privacidad y seguridad → Accesibilidad y volvé a conectar."
+            "The Accessibility permission is missing. Grant it to the running process (the app, or the terminal running Claude Code) in System Settings → Privacy & Security → Accessibility and connect again."
         case .notInstalled(let bundleID):
-            "No encontré ninguna app instalada con bundle id \(bundleID)."
+            "No installed app has bundle id \(bundleID)."
         case .notRunning(let bundleID):
-            "\(bundleID) no está corriendo."
+            "\(bundleID) is not running."
         case .noWindow(let bundleID):
-            "\(bundleID) no tiene ninguna ventana abierta."
+            "\(bundleID) has no open window."
         case .unknownAlias(let alias):
-            "No hay elemento @\(alias) en la última lectura: volvé a leer la pantalla."
+            "There is no element @\(alias) in the last reading: read the screen again."
         case .staleAlias(let alias):
-            "@\(alias) ya no existe: la pantalla cambió desde la última lectura. Volvé a leerla."
+            "@\(alias) no longer exists: the screen changed since the last reading. Read it again."
         case .noTextField:
-            "No hay un campo de texto con foco donde escribir."
+            "There is no focused text field to type into."
         case .nothingToScroll:
-            "No hay nada desplazable en la ventana."
+            "There is nothing scrollable in the window."
         case .unsupported(let what):
-            "En macOS no hay \(what)."
+            "There is no \(what) on macOS."
         case .axFailed(let what, let error):
-            "Accesibilidad rechazó \(what) (AXError \(error.rawValue))."
+            "Accessibility refused \(what) (AXError \(error.rawValue))."
         case .captureFailed(let detail):
-            "No pude capturar la ventana: \(detail)"
+            "Couldn't capture the window: \(detail)"
         case .notCapturable(let name):
-            "La ventana de \(name) no está en este escritorio (otro Space, pantalla completa o minimizada): no la puedo capturar. Leer y actuar sí funciona; para ver el mirror, traela a este escritorio."
+            "\(name)'s window is not on this desktop (another Space, full screen or minimized): it can't be captured. Reading and acting still work; to see the mirror, bring it to this desktop."
         case .underDebugger(let name):
-            "\(name) está corriendo bajo el depurador de Xcode: si la mato, Xcode intercepta la señal y la deja pausada en vez de cerrarla. Dejá vacío el bundle id para no relanzarla, o corré la app sin depurar."
+            "\(name) is running under the Xcode debugger: if it is killed, Xcode intercepts the signal and leaves it paused instead of quitting. Leave the bundle id empty so it isn't relaunched, or run the app without the debugger."
         case .noEffect(let what, let steps):
-            "\(what): la app aceptó la acción pero no cambió nada. Intentos: \(steps.map(\.caption).joined(separator: " → "))."
+            "\(what): the app took the action but nothing changed. Tried: \(steps.map(\.caption).joined(separator: " → "))."
         case .menuAlreadyOpen(let owner):
-            "Ya hay un menú abierto (\(owner)): elegí uno de sus ítems, o tocá de nuevo su control para cerrarlo, antes de abrir otro."
+            "A menu is already open (\(owner)): choose one of its items, or tap its control again to close it, before opening another."
         case .menuDidNotOpen(let owner, let steps):
-            "El menú de \(owner) no se abrió. Intentos: \(steps.map(\.caption).joined(separator: " → "))."
+            "The menu of \(owner) didn't open. Tried: \(steps.map(\.caption).joined(separator: " → "))."
         case .optionNotFound(let option, let options):
-            "No hay «\(option)» en el menú; cerré el menú sin elegir. Opciones: \(options.map { "«\($0)»" }.joined(separator: ", "))."
+            "There is no «\(option)» in the menu; closed it without choosing. Options: \(options.map { "«\($0)»" }.joined(separator: ", "))."
         case .notSettable(let what):
-            "El valor de \(what) no se puede cambiar: es de solo lectura."
+            "The value of \(what) can't be changed: it is read-only."
         case .invalidValue(let detail):
             detail
         case .wrongElement(let detail):
             detail
         case .ambiguousWindow(let app, let windows):
-            "\(app) tiene \(windows.count) ventanas: \(windows.map { $0.caption + ($0.isOnOtherSpace ? " (en otro escritorio)" : "") }.joined(separator: ", ")). Elegí una con `read_screen` y `window` (`list_windows` las muestra con su posición)."
+            "\(app) has \(windows.count) windows: \(windows.map { $0.caption + ($0.isOnOtherSpace ? " (on another desktop)" : "") }.joined(separator: ", ")). Choose one with `read_screen` and `window` (`list_windows` shows them with their position)."
         case .unknownWindow(let number):
-            "No hay ventana #\(number) en la app: mirá `list_windows`."
+            "The app has no window #\(number): see `list_windows`."
         case .mouseButtonHeld:
-            "No hice el clic real: hay un botón del mouse apretado (la persona está arrastrando o haciendo clic) y en 2 s no lo soltó. Un clic en medio le cortaría el arrastre. No toqué nada; probá de nuevo en un momento."
+            "Didn't do the real click: a mouse button is held down (the user is dragging or clicking) and wasn't released within 2 s. A click now would break the drag. Nothing was touched; try again in a moment."
         case .notClickable(let name):
-            "No hice el clic real: la ventana de \(name) no quedó al frente en ese punto en 2 s (otra ventana la tapa, o está en otro Space). No toqué nada; traela al frente y probá de nuevo."
+            "Didn't do the real click: \(name)'s window wasn't in front at that point within 2 s (another window covers it, or it is on another Space). Nothing was touched; bring it to the front and try again."
         case .windowOnOtherSpace(let window):
-            "La ventana \(window.caption) está en otro escritorio y desde acá Accesibilidad no la alcanza. Traela con `bring_to_front` (si está permitido en Fingertip → Ajustes → General), o pasá a ese escritorio y volvé a leer."
+            "Window \(window.caption) is on another desktop and Accessibility can't reach it from here. Bring it over with `bring_to_front` (if allowed in Fingertip → Settings → General), or switch to that desktop and read again."
         case .notBroughtForward(let window):
-            "Pedí traer al frente la ventana \(window) y en 2 s no quedó adelante (la app no la tiene en su menú Ventana, o tiene otra con el mismo título). Pasá a su escritorio a mano y volvé a leer."
+            "Asked to bring window \(window) to the front and it wasn't in front within 2 s (the app doesn't list it in its Window menu, or has another with the same title). Switch to its desktop by hand and read again."
         case .windowGone(let detail):
-            "La ventana elegida ya no está (\(detail)). Elegí otra con `list_windows`."
+            "The chosen window is gone (\(detail)). Choose another with `list_windows`."
         }
     }
 }
@@ -202,7 +202,7 @@ actor MacDriver: ScreenDriver {
     /// La copia concreta elegida: entre dos instancias con el mismo bundle id,
     /// se lee, se mata y se relanza esta.
     nonisolated let bundleURL: URL
-    nonisolated var name: String { "Accesibilidad" }
+    nonisolated var name: String { "Accessibility" }
 
     /// Contenedores y chrome: se recorren pero no se ofrecen como candidatos.
     /// Se descartan acá y no en `UIElement.isActionable` porque `Cell` en iOS
@@ -279,7 +279,7 @@ actor MacDriver: ScreenDriver {
             recording = try await recorder.stop()
         } catch RecordingError.notRecording {
         } catch {
-            FileHandle.standardError.write(Data("recording: no pude cerrar la grabación al desconectar: \(error.localizedDescription)\n".utf8))
+            FileHandle.standardError.write(Data("recording: couldn't close the recording on disconnect: \(error.localizedDescription)\n".utf8))
         }
         elements = [:]
         scrollAreas = []
@@ -578,7 +578,7 @@ actor MacDriver: ScreenDriver {
             // The window now, not at the last reading: a closed or ambiguous one is an error.
             let origin = try liveWindowOrigin() ?? windowFrame.origin
             try await click(at: CGPoint(x: origin.x + point.x, y: origin.y + point.y))
-            return [DeliveryStep("clic", .delivered)]
+            return [DeliveryStep("click", .delivered)]
         case .setValue(let alias, let value):
             return try await setValue(element(alias), alias: alias, to: value)
         case .toggle(let alias):
@@ -592,7 +592,7 @@ actor MacDriver: ScreenDriver {
         case .swipe(let from, let to):
             try scroll(at: from, down: to.y < from.y)
         case .pressButton(let button):
-            throw MacDriverError.unsupported("botón \"\(button)\"")
+            throw MacDriverError.unsupported("a \"\(button)\" button")
         case .submit:
             try submit()
         }
@@ -905,12 +905,12 @@ actor MacDriver: ScreenDriver {
         if let crop {
             let pixels = CGRect(x: crop.minX * scale, y: crop.minY * scale, width: crop.width * scale, height: crop.height * scale)
             guard let sheet = image.cropping(to: pixels) else {
-                throw MacDriverError.captureFailed("no se pudo recortar la hoja")
+                throw MacDriverError.captureFailed("couldn't crop the sheet")
             }
             image = sheet
         }
         guard let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else {
-            throw MacDriverError.captureFailed("no se pudo codificar el PNG")
+            throw MacDriverError.captureFailed("couldn't encode the PNG")
         }
         return png
     }

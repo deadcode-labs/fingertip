@@ -18,9 +18,9 @@ struct SettingsView: View {
 
         var title: String {
             switch self {
-            case .general: "General"
-            case .security: "Seguridad"
-            case .captures: "Capturas"
+            case .general: String(localized: "General")
+            case .security: String(localized: "Security")
+            case .captures: String(localized: "Captures")
             case .jev: "Jev"
             }
         }
@@ -66,7 +66,7 @@ struct SettingsView: View {
                 try new.save()
                 saveError = nil
             } catch {
-                saveError = "No pude guardar los ajustes: \(error.localizedDescription)"
+                saveError = String(localized: "Couldn’t save the settings: \(error.localizedDescription)")
             }
         }
         .onChange(of: apiKey) { _, new in KeychainStore.save(new) }
@@ -91,15 +91,15 @@ private struct GeneralPane: View {
     var body: some View {
         Form {
             Section {
-                LabeledContent("Servidor") {
+                LabeledContent("Server") {
                     Text(abbreviated(mcpPath))
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .textSelection(.enabled)
                         .foregroundStyle(.secondary)
                 }
-                LabeledContent("Registro") {
-                    Button(installing ? "Registrando…" : "Instalar / actualizar") { install() }
+                LabeledContent("Registration") {
+                    Button(installing ? "Registering…" : "Install / Update") { install() }
                         .disabled(installing)
                 }
                 if let installResult {
@@ -112,39 +112,39 @@ private struct GeneralPane: View {
             } header: {
                 Text("Claude Code")
             } footer: {
-                Text("Registra fingertip en Claude Code para todos tus proyectos. Después reconectá con `/mcp`.")
+                Text("Registers fingertip in Claude Code for all your projects. Then reconnect with `/mcp`.")
             }
 
             Section("Overlay") {
-                LabeledContent("Puntero y estado") {
-                    Text("Se muestran mientras esta app esté abierta")
+                LabeledContent("Pointer and status") {
+                    Text("Shown while this app is running")
                         .foregroundStyle(.secondary)
                 }
             }
 
             Section {
-                Toggle("Permitir traer ventanas al frente", isOn: Binding(
+                Toggle("Allow bringing windows to the front", isOn: Binding(
                     get: { settings.bringToFrontEnabled },
                     set: { settings.allowsBringToFront = $0 }
                 ))
             } header: {
-                Text("Ventanas")
+                Text("Windows")
             } footer: {
-                Text("Habilita `bring_to_front`: activa la app y, si la ventana está en otro escritorio, cambia a ese escritorio. Mueve lo que estás viendo. El MCP lo lee en cada uso: no hace falta reconectar.")
+                Text("Enables `bring_to_front`: it activates the app and, if the window is on another desktop, switches to that desktop. It changes what you are looking at. The MCP reads this on every use, so there is no need to reconnect.")
             }
 
             Section {
-                Toggle("Buscar actualizaciones automáticamente", isOn: $checksForUpdates)
+                Toggle("Check for updates automatically", isOn: $checksForUpdates)
                     .onChange(of: checksForUpdates) { _, new in
                         AppUpdater.shared.automaticallyChecksForUpdates = new
                     }
-                LabeledContent("Versión \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")") {
-                    Button("Buscar ahora") { AppUpdater.shared.checkForUpdates() }
+                LabeledContent("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")") {
+                    Button("Check Now") { AppUpdater.shared.checkForUpdates() }
                 }
             } header: {
-                Text("Actualizaciones")
+                Text("Updates")
             } footer: {
-                Text("Al actualizarse la app también se actualiza el `fingertip-mcp` que trae: reconectá con `/mcp`.")
+                Text("Updating the app also updates the `fingertip-mcp` it ships with: reconnect with `/mcp`.")
             }
 
             if let saveError {
@@ -183,7 +183,7 @@ private struct SecurityPane: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Modo dios: permitir todas las apps", isOn: Binding(
+                Toggle("God mode: allow all apps", isOn: Binding(
                     get: { unrestricted },
                     set: { on in
                         if on {
@@ -195,7 +195,7 @@ private struct SecurityPane: View {
                 ))
                 .disabled(installing)
                 if unrestricted {
-                    Label("Activo en todas las sesiones de Claude Code hasta que lo apagues.",
+                    Label("On in every Claude Code session until you turn it off.",
                           systemImage: "exclamationmark.shield.fill")
                         .foregroundStyle(.red)
                         .font(.callout)
@@ -207,22 +207,22 @@ private struct SecurityPane: View {
                         .textSelection(.enabled)
                 }
             } header: {
-                Text("Modo dios")
+                Text("God Mode")
             } footer: {
-                Text("Libera todas las apps de esta lista, Fingertip incluida. Cambiarlo vuelve a registrar el servidor; después reconectá con `/mcp`.")
+                Text("Unblocks every app on this list, Fingertip included. Changing it registers the server again; then reconnect with `/mcp`.")
             }
-            .alert("¿Activar el modo dios?", isPresented: $confirmingUnrestricted) {
-                Button("Activar", role: .destructive) { setUnrestricted(true) }
-                Button("Cancelar", role: .cancel) {}
+            .alert("Turn on god mode?", isPresented: $confirmingUnrestricted) {
+                Button("Turn On", role: .destructive) { setUnrestricted(true) }
+                Button("Cancel", role: .cancel) {}
             } message: {
                 Text(Self.unrestrictedWarning)
             }
 
             Section {
-                Text("El MCP no maneja estas apps: escribir en ellas puede correr comandos o exponer secretos. Prendé una para permitirla y reconectá con `/mcp`: el MCP lee las permitidas solo al arrancar, para que una instrucción inyectada no pueda liberarlas a mitad de sesión editando los ajustes. Las que no tenés instaladas no aparecen y siguen bloqueadas.")
+                Text("The MCP doesn’t drive these apps: typing into them can run commands or expose secrets. Turn one on to allow it and reconnect with `/mcp`: the MCP reads the allowed apps only at launch, so an injected instruction can’t unblock them mid-session by editing the settings. Apps you don’t have installed don’t appear and stay blocked.")
                     .foregroundStyle(.secondary)
             } header: {
-                Text("Apps bloqueadas")
+                Text("Blocked Apps")
             }
 
             ForEach(BlockedApps.builtIn) { group in
@@ -243,11 +243,11 @@ private struct SecurityPane: View {
                 } label: {
                     BlockedAppRow.Label(bundleID: BlockedApps.fingertip)
                 }
-                .help("Sus ajustes tienen estos switches: solo el modo dios la libera.")
+                .help("Its settings hold these switches: only god mode unblocks it.")
             } header: {
                 Text("Fingertip")
             } footer: {
-                Text("No se puede permitir sola: desde estos ajustes se libera todo lo demás. Solo el modo dios la libera.")
+                Text("It can’t be allowed on its own: these settings unblock everything else. Only god mode unblocks it.")
             }
 
             Section {
@@ -261,7 +261,7 @@ private struct SecurityPane: View {
                             Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
                         }
                         .buttonStyle(.plain)
-                        .help("Quitar de la lista")
+                        .help("Remove from the list")
                     }
                 }
                 .disabled(unrestricted)
@@ -270,12 +270,12 @@ private struct SecurityPane: View {
                         Text(addError).foregroundStyle(.orange).font(.callout)
                     }
                     Spacer()
-                    Button("Agregar app…") { addingApp = true }
+                    Button("Add App…") { addingApp = true }
                 }
             } header: {
-                Text("Agregadas por vos")
+                Text("Added by You")
             } footer: {
-                Text("Elegí una app para bloquearla igual que las de arriba. Bloquear vale desde la próxima conexión a esa app, sin reconectar el MCP; quitarla de la lista, como permitir, pide `/mcp`.")
+                Text("Choose an app to block it like the ones above. Blocking takes effect on the next connection to that app, without reconnecting the MCP; removing it from the list, like allowing, needs `/mcp`.")
             }
             .fileImporter(isPresented: $addingApp, allowedContentTypes: [.application]) { result in
                 if case .success(let url) = result { add(url) }
@@ -301,7 +301,7 @@ private struct SecurityPane: View {
 
     private func add(_ url: URL) {
         guard let id = Bundle(url: url)?.bundleIdentifier?.lowercased() else {
-            addError = "No pude leer el bundle id de \(url.lastPathComponent)."
+            addError = String(localized: "Couldn’t read the bundle ID of \(url.lastPathComponent).")
             return
         }
         addError = nil
@@ -314,18 +314,18 @@ private struct SecurityPane: View {
         settings.extraBlockedAppIDs = settings.extraBlockedApps + [id]
     }
 
-    private static let unrestrictedWarning = """
-    Claude va a poder conectarse y escribir en todas las apps bloqueadas: Terminal, iTerm y otras terminales; VS Code, Cursor, Zed, JetBrains y otros editores con terminal; las apps de Claude, Codex y ChatGPT; Script Editor, Automator, Atajos, Raycast y Alfred; esta misma app; Ajustes del Sistema; Acceso a Llaveros, Contraseñas, 1Password y otros gestores; y las que agregaste vos.
+    private static let unrestrictedWarning = String(localized: """
+    Claude will be able to connect to and type into every blocked app: Terminal, iTerm and other terminals; VS Code, Cursor, Zed, JetBrains and other editors with a terminal; the Claude, Codex and ChatGPT apps; Script Editor, Automator, Shortcuts, Raycast and Alfred; this app itself; System Settings; Keychain Access, Passwords, 1Password and other password managers; and the apps you added.
 
-    Qué implica:
-    • Todo lo que fingertip lee de la pantalla le llega a Claude como texto. Una instrucción escondida en una web, un mail o un documento puede llevarlo a abrir una terminal y correr un comando con tus permisos: borrar archivos, subir tus datos, instalar algo.
-    • Las contraseñas, tokens y claves que se vean en pantalla pasan a la conversación.
-    • Puede cambiar permisos de privacidad y seguridad en Ajustes del Sistema.
-    • Puede darle órdenes a otros agentes, que actúan con sus propios permisos.
-    • Vale para todos tus proyectos y sesiones de Claude Code, no solo para la tarea de ahora, hasta que lo apagues.
+    What this means:
+    • Everything fingertip reads from the screen reaches Claude as text. An instruction hidden in a web page, an email or a document can lead it to open a terminal and run a command with your permissions: delete files, upload your data, install something.
+    • Passwords, tokens and keys visible on screen end up in the conversation.
+    • It can change privacy and security permissions in System Settings.
+    • It can give orders to other agents, which act with their own permissions.
+    • It applies to all your projects and Claude Code sessions, not just the current task, until you turn it off.
 
-    Si solo necesitás una app, es más seguro desbloquear esa sola en esta lista.
-    """
+    If you only need one app, it is safer to unblock just that one on this list.
+    """)
 
     /// Re-registers the server with the new value; on failure the switch goes back,
     /// so it never shows a mode the registration does not have.
@@ -351,7 +351,7 @@ private struct BlockedAppRow: View {
 
     var body: some View {
         Toggle(isOn: $isAllowed) { Label(bundleID: bundleID) }
-            .accessibilityLabel("Permitir \(bundleID)")
+            .accessibilityLabel("Allow \(bundleID)")
     }
 
     static func isInstalled(_ id: String) -> Bool {
@@ -379,7 +379,7 @@ private struct BlockedAppRow: View {
         }
 
         private func name(_ url: URL?) -> String {
-            if bundleID == BlockedApps.jetBrainsPrefix { return "IDEs de JetBrains (todos)" }
+            if bundleID == BlockedApps.jetBrainsPrefix { return String(localized: "JetBrains IDEs (all)") }
             guard let url else { return bundleID }
             return FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
         }
@@ -396,44 +396,44 @@ private struct CapturesPane: View {
         Form {
             Section {
                 FolderRow(
-                    title: "Carpeta",
+                    title: "Folder",
                     url: settings.effectiveScreenshotsDirectory,
                     isCustom: settings.screenshotsDirectory != nil,
                     choose: { settings.screenshotsDirectory = $0 },
                     reset: { settings.screenshotsDirectory = nil }
                 )
             } header: {
-                Text("Screenshots del MCP")
+                Text("MCP Screenshots")
             } footer: {
-                Text("Cada `screenshot` guarda acá el PNG completo. Por defecto es una carpeta temporal que macOS limpia sola.")
+                Text("Each `screenshot` saves the full PNG here. By default it is a temporary folder that macOS cleans up on its own.")
             }
 
             Section {
                 FolderRow(
-                    title: "Carpeta",
+                    title: "Folder",
                     url: settings.effectiveRecordingsDirectory,
                     isCustom: settings.recordingsDirectory != nil,
                     choose: { settings.recordingsDirectory = $0 },
                     reset: { settings.recordingsDirectory = nil }
                 )
             } header: {
-                Text("Grabaciones del MCP")
+                Text("MCP Recordings")
             } footer: {
-                Text("Cada `start_recording` / `stop_recording` deja acá un .mov. Por defecto es una carpeta temporal que macOS limpia sola.")
+                Text("Each `start_recording` / `stop_recording` leaves a .mov here. By default it is a temporary folder that macOS cleans up on its own.")
             }
 
             Section {
                 FolderRow(
-                    title: "Carpeta",
+                    title: "Folder",
                     url: settings.effectiveRunsDirectory,
                     isCustom: settings.runsDirectory != nil,
                     choose: { settings.runsDirectory = $0 },
                     reset: { settings.runsDirectory = nil }
                 )
             } header: {
-                Text("Runs de Jev")
+                Text("Jev Runs")
             } footer: {
-                Text("Cada run guarda un JSONL con los pasos y una carpeta con las capturas.")
+                Text("Each run saves a JSONL file with the steps and a folder with the screenshots.")
             }
 
             if let saveError {
@@ -445,7 +445,7 @@ private struct CapturesPane: View {
 }
 
 private struct FolderRow: View {
-    let title: String
+    let title: LocalizedStringKey
     let url: URL
     let isCustom: Bool
     let choose: (URL) -> Void
@@ -469,10 +469,10 @@ private struct FolderRow: View {
         HStack {
             Spacer()
             if isCustom {
-                Button("Usar la predeterminada", action: reset)
+                Button("Use Default", action: reset)
             }
-            Button("Mostrar en Finder") { reveal() }
-            Button("Elegir…") { picking = true }
+            Button("Show in Finder") { reveal() }
+            Button("Choose…") { picking = true }
         }
         .fileImporter(isPresented: $picking, allowedContentTypes: [.folder]) { result in
             if case .success(let folder) = result { choose(folder) }
@@ -493,11 +493,11 @@ private struct JevPane: View {
     var body: some View {
         Form {
             Section {
-                SecureField("TYPESAFE_API_KEY", text: $apiKey, prompt: Text("Pegá tu clave"))
+                SecureField("TYPESAFE_API_KEY", text: $apiKey, prompt: Text("Paste your key"))
             } header: {
-                Text("Clave de API")
+                Text("API Key")
             } footer: {
-                Text("La usa `run_instruction`. Se guarda en el Llavero y se pasa al registrar el MCP: si la cambiás, volvé a instalar desde General.")
+                Text("Used by `run_instruction`. It is stored in the Keychain and passed along when the MCP is registered: if you change it, install again from General.")
             }
         }
     }

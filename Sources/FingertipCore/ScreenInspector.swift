@@ -172,7 +172,7 @@ public final class ScreenInspector {
             previousCount = count
             try? await Task.sleep(for: .milliseconds(500))
         }
-        failure = UnexpectedError(message: "\(bundleID) no quedó en primer plano después de \(timeout.components.seconds) s.")
+        failure = UnexpectedError(message: "\(bundleID) wasn't in the foreground after \(timeout.components.seconds) s.")
         return false
     }
 

@@ -2,23 +2,23 @@
 //  main.swift
 //  fingertip-mcp
 //
-//  Servidor MCP por stdio para que Claude Code haga pruebas manuales sobre un
-//  simulador iOS o una app de macOS. Se registra con:
+//  MCP server over stdio so Claude Code can run manual tests on an iOS
+//  simulator or a macOS app. Register it with:
 //
-//      claude mcp add fingertip -- <ruta>/fingertip-mcp
+//      claude mcp add fingertip -- <path>/fingertip-mcp
 //
-//  Terminales, editores con terminal, Claude y gestores de contraseñas quedan
-//  bloqueados; `-e FINGERTIP_UNRESTRICTED=1` en el registro los libera.
+//  Terminals, editors with a terminal, Claude and password managers are
+//  blocked; `-e FINGERTIP_UNRESTRICTED=1` at registration lifts that.
 //
-//  Los permisos de macOS (Accesibilidad, Grabación de pantalla) los pide el
-//  proceso responsable, que lanzado desde Claude Code es la terminal, no este
-//  binario. Solo hacen falta para apps de macOS.
+//  macOS permissions (Accessibility, Screen Recording) belong to the
+//  responsible process, which launched from Claude Code is the terminal, not
+//  this binary. They are only needed for macOS apps.
 //
 
 import AppKit
 
-// ScreenCaptureKit asierta en `CGS_REQUIRE_INIT` en un binario de línea de
-// comandos que no tocó NSApplication antes.
+// ScreenCaptureKit asserts in `CGS_REQUIRE_INIT` in a command-line binary
+// that hasn't touched NSApplication first.
 _ = NSApplication.shared
 
 let session = Session()
@@ -26,12 +26,12 @@ let server = MCPServer(
     name: "fingertip",
     version: "0.6.0",
     instructions: """
-    Prueba a mano un simulador iOS o una app de macOS: leé la pantalla, tocá, escribí, scrolleá y verificá. \
-    Flujo típico: `list_targets` → `connect` → `relaunch_app` para arrancar limpio → `read_screen` → acciones \
-    (cada una devuelve la pantalla nueva) → `screenshot` para verificar lo visual. Los alias `@L:N` llevan el \
-    número de lectura: `tap` rechaza uno si la pantalla cambió antes de ese elemento. En pantallas densas, \
-    `read_screen` con `skeleton` y después `region`. Cada error trae un código y `retry_safe`. \
-    `run_instruction` delega una instrucción entera a Jev.
+    Manually test an iOS simulator or a macOS app: read the screen, tap, type, scroll and verify. \
+    Typical flow: `list_targets` → `connect` → `relaunch_app` for a clean start → `read_screen` → actions \
+    (each returns the new screen) → `screenshot` to check visuals. `@L:N` aliases carry the reading \
+    number: `tap` refuses one if the screen changed before that element. On dense screens, \
+    `read_screen` with `skeleton` and then `region`. Every error carries a code and `retry_safe`. \
+    `run_instruction` delegates a whole instruction to Jev.
     """,
     tools: session.tools,
     status: session.status

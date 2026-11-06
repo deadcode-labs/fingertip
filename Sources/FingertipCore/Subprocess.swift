@@ -31,9 +31,9 @@ public nonisolated struct SubprocessTimeout: FingertipError {
 
     public var errorDescription: String? {
         let tail = isRead
-            ? "Volvé a intentar; si se repite, el simulador puede estar trabado (borralo con `xcrun simctl erase`)."
-            : "La acción pudo haber llegado antes de trabarse: volvé a leer la pantalla antes de repetirla."
-        return "`\(command)` no terminó en \(seconds) s y lo corté. \(tail)"
+            ? "Try again; if it happens again, the simulator may be stuck (erase it with `xcrun simctl erase`)."
+            : "The action may have landed before the hang: read the screen again before repeating it."
+        return "`\(command)` didn't finish within \(seconds) s and was killed. \(tail)"
     }
 }
 

@@ -42,25 +42,26 @@ nonisolated enum SimUseError: FingertipError {
     var errorDescription: String? {
         switch self {
         case .notInstalled:
-            "No encontré sim-use. Instalalo con `brew install lycorp-jp/tap/sim-use`."
+            "sim-use not found. Install it with `brew install lycorp-jp/tap/sim-use`."
         case .invalidUDID(let udid):
-            "UDID inválido: \(udid)"
+            "Invalid UDID: \(udid)"
         case .notTypable(let characters):
-            "No puedo escribir \(characters): el teclado del simulador solo acepta el layout US. `paste` no es alternativa — necesita el pasteboard del simulador, que sin Simulator.app no sincroniza."
+            "Can't type \(characters): the simulator keyboard only takes the US layout. `paste` is no alternative — it needs the simulator's pasteboard, which doesn't sync without Simulator.app."
         case .launchFailed(let detail):
-            "No pude ejecutar sim-use: \(detail)"
+            "Couldn't run sim-use: \(detail)"
         case .failed(let message, let hint):
             hint.map { "\(message)\n\n\($0)" } ?? message
         case .badResponse(let detail):
-            "Respuesta inesperada de sim-use: \(detail)"
+            "Unexpected response from sim-use: \(detail)"
         case .unsupported(let action):
-            "«\(action)» solo existe en macOS: en el simulador, tocá el control y elegí con `tap`."
+            "«\(action)» exists only on macOS: on the simulator, tap the control and choose with `tap`."
         }
     }
 }
 
-/// Se nombra por el contenido que se quiere ver, no por hacia dónde va el dedo,
-/// que es al revés. Es lo que elige Jev, así que tiene que leerse como intención.
+/// Named after the content to see, not where the finger goes, which is the opposite.
+/// It is what Jev chooses, so it must read as intent. `caption` goes into Jev's history
+/// prompt: it stays as it is.
 public nonisolated enum ScrollDirection: String, Sendable {
     case down, up
 
@@ -90,20 +91,20 @@ public nonisolated enum DeviceAction: Sendable {
     /// Opens the menu of a pop-up or menu button and picks the item with this name. macOS only.
     case select(alias: Int, option: String)
 
-    /// Lo que se muestra en la UI y en el historial de pasos.
+    /// What the UI, the pointer overlay and the MCP reply show. Not part of Jev's history.
     /// `setValue` leaves the value out: it may be a password.
     public var caption: String {
         switch self {
         case .tap(let alias, let point):
-            alias.map { "Tocar @\($0)" } ?? "Tocar (\(Int(point.x)), \(Int(point.y)))"
-        case .inputText(let text): "Escribir \"\(text)\""
-        case .eraseText(let count): "Borrar \(count) caracteres"
-        case .swipe(let from, let to): "Deslizar (\(Int(from.y)) → \(Int(to.y)))"
-        case .pressButton(let button): "Botón \(button)"
+            alias.map { "Tap @\($0)" } ?? "Tap (\(Int(point.x)), \(Int(point.y)))"
+        case .inputText(let text): "Type \"\(text)\""
+        case .eraseText(let count): "Delete \(count) characters"
+        case .swipe(let from, let to): "Swipe (\(Int(from.y)) → \(Int(to.y)))"
+        case .pressButton(let button): "Button \(button)"
         case .submit: "Return"
-        case .setValue(let alias, _): "Cambiar el valor de @\(alias)"
-        case .toggle(let alias): "Alternar @\(alias)"
-        case .select(let alias, let option): "Elegir «\(option)» en @\(alias)"
+        case .setValue(let alias, _): "Set the value of @\(alias)"
+        case .toggle(let alias): "Toggle @\(alias)"
+        case .select(let alias, let option): "Choose «\(option)» in @\(alias)"
         }
     }
 
@@ -217,7 +218,7 @@ public actor SimUse {
         do {
             let envelope = try JSONDecoder().decode(SimUseEnvelope<SimUseScreenData>.self, from: data)
             guard let screen = envelope.data else {
-                throw SimUseError.badResponse("envelope sin data")
+                throw SimUseError.badResponse("envelope without data")
             }
             return ScreenHierarchy(screen, vanished: envelope.vanishedApps)
         } catch let error as SimUseError {

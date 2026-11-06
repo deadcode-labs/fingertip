@@ -38,13 +38,13 @@ nonisolated enum SimctlError: FingertipError {
     var errorDescription: String? {
         switch self {
         case .invalidUDID(let udid):
-            "UDID inválido: \(udid)"
+            "Invalid UDID: \(udid)"
         case .invalidBundleID(let bundleID):
-            "Bundle id inválido: \(bundleID)"
+            "Invalid bundle id: \(bundleID)"
         case .commandFailed(let command, let status, let stderr):
-            "`\(command)` falló (\(status)): \(stderr.isEmpty ? "sin stderr" : stderr)"
+            "`\(command)` failed (\(status)): \(stderr.isEmpty ? "no stderr" : stderr)"
         case .badOutput(let detail):
-            "Salida inesperada de simctl: \(detail)"
+            "Unexpected output from simctl: \(detail)"
         }
     }
 }

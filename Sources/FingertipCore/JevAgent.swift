@@ -33,9 +33,9 @@ public nonisolated enum JevAgentError: FingertipError {
 
     public var errorDescription: String? {
         switch self {
-        case .nothingActionable: "No hay elementos tocables en la pantalla."
-        case .maxSteps(let steps): "Frené después de \(steps) pasos sin cumplir la instrucción."
-        case .appCrashed(let bundleID): "\(bundleID) dejó de correr a mitad de la corrida (¿crash?)."
+        case .nothingActionable: "There are no tappable elements on the screen."
+        case .maxSteps(let steps): "Stopped after \(steps) steps without finishing the instruction."
+        case .appCrashed(let bundleID): "\(bundleID) stopped running mid-run (crash?)."
         }
     }
 }
@@ -226,7 +226,7 @@ public final class JevAgent {
             candidates = []
         }
 
-        await status("Paso \(stepIndex) · Jev decidiendo…", .working)
+        await status("Step \(stepIndex) · Jev deciding…", .working)
         let decision: JevDecision
         do {
             decision = try await jev.decide(
@@ -268,22 +268,22 @@ public final class JevAgent {
 
     /// The step's outcome for the Fingertip app's toast.
     private func reportStatus(_ decision: JevDecision) async {
-        let step = "Paso \(stepIndex)"
+        let step = "Step \(stepIndex)"
         let confidence = String(format: "%.2f", decision.confidence)
         if failure != nil { return }
         switch outcome {
         case .goalReached:
-            await status("Jev: instrucción cumplida", .goal)
+            await status("Jev: instruction done", .goal)
         case .needsUser:
             if heldForRisk, let risk = decision.risk {
-                await status(String(format: "\(step) · frené: parece destructivo (riesgo %.2f)", risk), .held)
+                await status(String(format: "\(step) · stopped: looks destructive (risk %.2f)", risk), .held)
             } else {
-                await status("\(step) · Jev no está seguro (\(confidence)): elegí vos", .held)
+                await status("\(step) · Jev isn't sure (\(confidence)): your call", .held)
             }
         case .acted(let caption):
             await status("\(step) · \(caption) (\(confidence))", .working)
         case .screenChanged:
-            await status("\(step) · la pantalla cambió, vuelvo a mirar", .working)
+            await status("\(step) · the screen changed, looking again", .working)
         case nil:
             break
         }
@@ -292,9 +292,9 @@ public final class JevAgent {
     /// Looking is a step of its own: nothing on screen changes, only what the next step offers.
     private func look(at region: String?) {
         drilledRegion = region
-        let caption = region.map { "Miré dentro de «\($0)»" } ?? "Volví a mirar la ventana entera"
-        history.append(caption)
-        outcome = .acted(caption)
+        // The history line goes into Jev's prompt, so it stays as it is; the outcome is for the toast.
+        history.append(region.map { "Miré dentro de «\($0)»" } ?? "Volví a mirar la ventana entera")
+        outcome = .acted(region.map { "Looked inside «\($0)»" } ?? "Looked at the whole window again")
     }
 
     /// Regions in screen order, each with a few captions so Jev can tell them apart.
@@ -394,8 +394,9 @@ public final class JevAgent {
             failure = inspector.failure
             return
         }
+        // `direction.caption` goes into Jev's prompt; the outcome is for the toast and the log.
         history.append(direction.caption)
-        outcome = .acted(direction.caption)
+        outcome = .acted(direction == .down ? "Scrolled down" : "Scrolled up")
     }
 
     /// Tocar y, si el elemento acepta texto y Jev eligió qué escribir, escribirlo.
@@ -420,6 +421,6 @@ public final class JevAgent {
         }
         history.append("Escribí \"\(text)\"")
         // The outcome reaches the toast on screen; the text may be a password, so only its length.
-        outcome = .acted("\(element.caption) → \(text.count) caracteres")
+        outcome = .acted("\(element.caption) → \(text.count) characters")
     }
 }

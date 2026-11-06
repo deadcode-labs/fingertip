@@ -32,11 +32,11 @@ public nonisolated enum RecordingError: FingertipError {
     public var errorDescription: String? {
         switch self {
         case .alreadyRecording(let url):
-            "Ya hay una grabación en curso (\(url.path)). Detenela con `stop_recording` antes de empezar otra."
+            "A recording is already in progress (\(url.path)). Stop it with `stop_recording` before starting another."
         case .notRecording:
-            "No hay ninguna grabación en curso."
+            "No recording in progress."
         case .failed(let detail):
-            "La grabación falló: \(detail)"
+            "The recording failed: \(detail)"
         }
     }
 }
@@ -80,7 +80,7 @@ actor SimulatorRecorder {
             discard()
             let detail = String(decoding: errors.fileHandleForReading.availableData, as: UTF8.self)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            throw RecordingError.failed(detail.isEmpty ? "simctl terminó con \(process.terminationStatus)" : detail)
+            throw RecordingError.failed(detail.isEmpty ? "simctl exited with \(process.terminationStatus)" : detail)
         }
     }
 
@@ -106,13 +106,13 @@ actor SimulatorRecorder {
         }
         if process.isRunning {
             process.terminate()
-            throw RecordingError.failed("simctl no cerró el video en 10 s; el archivo puede no abrir")
+            throw RecordingError.failed("simctl didn't close the video within 10 s; the file may not open")
         }
         let size = (try? FileManager.default.attributesOfItem(atPath: output.path)[.size] as? Int) ?? 0
         guard size > 0 else {
             let detail = errors.map { String(decoding: $0.fileHandleForReading.availableData, as: UTF8.self) } ?? ""
             throw RecordingError.failed(detail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                ? "el archivo quedó vacío" : detail)
+                ? "the file is empty" : detail)
         }
         return output
     }
@@ -159,7 +159,7 @@ actor WindowRecorder {
 
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
         guard let window = content.windows.first(where: { $0.windowID == windowID }) else {
-            throw RecordingError.failed("la ventana ya no está")
+            throw RecordingError.failed("the window is gone")
         }
 
         let filter = SCContentFilter(desktopIndependentWindow: window)
@@ -203,7 +203,7 @@ actor WindowRecorder {
         }
         let size = (try? FileManager.default.attributesOfItem(atPath: output.path)[.size] as? Int) ?? 0
         guard delegate.state.finished, size > 0 else {
-            throw RecordingError.failed(delegate.state.failure ?? "el video no se cerró a tiempo")
+            throw RecordingError.failed(delegate.state.failure ?? "the video wasn't closed in time")
         }
         return output
     }

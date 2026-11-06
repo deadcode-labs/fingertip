@@ -2,20 +2,20 @@
 //  MCPServer.swift
 //  fingertip-mcp
 //
-//  Transporte MCP por stdio: JSON-RPC 2.0, un mensaje por línea. No hay SDK
-//  de por medio porque la superficie que hace falta es chica —`initialize`,
-//  `tools/list`, `tools/call`, `ping`— y así el binario no depende de nada.
+//  MCP transport over stdio: JSON-RPC 2.0, one message per line. No SDK in
+//  between because the surface needed is small —`initialize`, `tools/list`,
+//  `tools/call`, `ping`— and so the binary depends on nothing.
 //
-//  stdout es del protocolo: cualquier otra cosa que se escriba ahí rompe la
-//  sesión. Los diagnósticos van a stderr, que Claude Code guarda en su log.
+//  stdout belongs to the protocol: anything else written there breaks the
+//  session. Diagnostics go to stderr, which Claude Code keeps in its log.
 //
 
 import FingertipCore
 import Foundation
 
-/// Lo que devuelve una tool: bloques de contenido y si fue un error. Un error
-/// de tool no es un error de JSON-RPC: va en el resultado, para que el modelo
-/// lo lea y corrija.
+/// What a tool returns: content blocks and whether it was an error. A tool error
+/// is not a JSON-RPC error: it goes in the result, so the model reads it and
+/// corrects course.
 struct ToolResult {
     var content: [[String: Any]]
     var isError = false
@@ -46,7 +46,7 @@ struct ToolResult {
 struct Tool {
     var name: String
     var description: String
-    /// Propiedades del JSON Schema de los argumentos.
+    /// JSON Schema properties of the arguments.
     var properties: [String: Any] = [:]
     var required: [String] = []
     var handler: ([String: Any]) async -> ToolResult
@@ -79,8 +79,8 @@ final class MCPServer {
         self.status = status
     }
 
-    /// Atiende de a un mensaje: una tool que tarda (una corrida de Jev) demora
-    /// a las siguientes, que es lo correcto sobre un único dispositivo.
+    /// Handles one message at a time: a slow tool (a Jev run) delays the next
+    /// ones, which is right on a single device.
     func serve() async {
         do {
             for try await line in FileHandle.standardInput.bytes.lines {
@@ -94,11 +94,11 @@ final class MCPServer {
 
     private func handle(_ line: String) async {
         guard let message = (try? JSONSerialization.jsonObject(with: Data(line.utf8))) as? [String: Any] else {
-            send(["jsonrpc": "2.0", "id": NSNull(), "error": ["code": -32700, "message": "JSON inválido"]])
+            send(["jsonrpc": "2.0", "id": NSNull(), "error": ["code": -32700, "message": "Invalid JSON"]])
             return
         }
         let method = message["method"] as? String ?? ""
-        // Sin id es una notificación (`notifications/initialized`, cancelaciones): no se responde.
+        // No id means a notification (`notifications/initialized`, cancellations): no reply.
         guard let id = message["id"] else { return }
         let params = message["params"] as? [String: Any] ?? [:]
 
@@ -117,7 +117,7 @@ final class MCPServer {
         case "tools/call":
             let toolName = params["name"] as? String ?? ""
             guard let tool = tools.first(where: { $0.name == toolName }) else {
-                fail(id, code: -32602, "No existe la tool \(toolName)")
+                fail(id, code: -32602, "Unknown tool: \(toolName)")
                 return
             }
             let arguments = params["arguments"] as? [String: Any] ?? [:]
@@ -132,7 +132,7 @@ final class MCPServer {
             if let structured = result.structured { payload["structuredContent"] = structured }
             reply(id, payload)
         default:
-            fail(id, code: -32601, "Método no soportado: \(method)")
+            fail(id, code: -32601, "Method not supported: \(method)")
         }
     }
 
@@ -156,14 +156,14 @@ final class MCPServer {
         switch result.outcome {
         case "goal_reached", "needs_user": return nil
         // Out of steps or interrupted: the instruction isn't done, so neither "thinking" nor a plain label.
-        case "stopped": return .status(text: "Jev: frenó sin cumplir la instrucción", state: .held)
+        case "stopped": return .status(text: "Jev: stopped without finishing the instruction", state: .held)
         default: return .status(text: text, state: .done)
         }
     }
 
     private func send(_ message: [String: Any]) {
         guard let data = try? JSONSerialization.data(withJSONObject: message, options: [.withoutEscapingSlashes]) else {
-            log("no pude serializar la respuesta")
+            log("couldn't serialize the response")
             return
         }
         FileHandle.standardOutput.write(data + Data("\n".utf8))

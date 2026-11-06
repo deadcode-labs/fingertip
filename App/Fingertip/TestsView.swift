@@ -2,7 +2,7 @@
 //  TestsView.swift
 //  Fingertip
 //
-//  The "Pruebas" window: the tests the MCP saved under `TestSession.directory`, and for
+//  The "Tests" window: the tests the MCP saved under `TestSession.directory`, and for
 //  one of them its verdict, video and steps with the screen after each step. Read-only;
 //  everything it shows comes from `TestLibrary`.
 //
@@ -33,9 +33,9 @@ struct TestsView: View {
                         .id(selected.id)
                 } else {
                     ContentUnavailableView(
-                        "Ninguna prueba elegida",
+                        "No Test Selected",
                         systemImage: "list.bullet.rectangle",
-                        description: Text("Elegí una prueba de la lista para ver su video y sus pasos.")
+                        description: Text("Choose a test from the list to see its video and steps.")
                     )
                 }
             }
@@ -43,7 +43,7 @@ struct TestsView: View {
         }
         .toolbar {
             ToolbarItem {
-                Button("Actualizar", systemImage: "arrow.clockwise") {
+                Button("Refresh", systemImage: "arrow.clockwise") {
                     Task { await reload() }
                 }
                 .keyboardShortcut("r")
@@ -82,9 +82,9 @@ private struct TestListView: View {
         .overlay {
             if tests.isEmpty && !loading {
                 ContentUnavailableView(
-                    "Sin pruebas",
+                    "No Tests",
                     systemImage: "tray",
-                    description: Text("Las pruebas que guarda el MCP con connect(test:) aparecen aquí.")
+                    description: Text("Tests the MCP saves with connect(test:) appear here.")
                 )
             }
         }
@@ -142,11 +142,11 @@ private struct VerdictMark: View {
 
     private var title: String {
         switch verdict {
-        case .passed: "Pasó"
-        case .failed: "Falló"
-        case .none: "Sin veredicto"
-        case .inProgress: "En curso"
-        case .unknown: "test.json ilegible"
+        case .passed: String(localized: "Passed")
+        case .failed: String(localized: "Failed")
+        case .none: String(localized: "No verdict")
+        case .inProgress: String(localized: "In progress")
+        case .unknown: String(localized: "Unreadable test.json")
         }
     }
 
@@ -197,9 +197,9 @@ private struct TestDetailView: View {
                     .frame(width: 320)
                 Divider()
                 VStack(spacing: 0) {
-                    Picker("Vista", selection: $pane) {
+                    Picker("View", selection: $pane) {
                         Text("Video").tag(Pane.video)
-                        Text("Paso").tag(Pane.step)
+                        Text("Step").tag(Pane.step)
                     }
                     .pickerStyle(.segmented)
                     .labelsHidden()
@@ -219,9 +219,9 @@ private struct TestDetailView: View {
                                 StepDetail(step: selectedStep)
                             } else {
                                 ContentUnavailableView(
-                                    "Ningún paso elegido",
+                                    "No Step Selected",
                                     systemImage: "rectangle.on.rectangle",
-                                    description: Text("Elegí un paso para ver su pantalla y su resultado.")
+                                    description: Text("Choose a step to see its screen and result.")
                                 )
                             }
                         }
@@ -263,17 +263,17 @@ private struct TestHeader: View {
                     .font(.headline)
                 Spacer()
                 if test.hasJevRuns {
-                    Button("Runs de Jev en Finder") { reveal(test.jevDirectory) }
+                    Button("Jev Runs in Finder") { reveal(test.jevDirectory) }
                 }
-                Button("Mostrar en Finder") { reveal(test.folder) }
+                Button("Show in Finder") { reveal(test.folder) }
             }
 
             Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
-                row("Objetivo", test.target ?? "—")
-                row("Inicio", test.started.map(TestFormat.date) ?? "—")
-                row("Fin", test.ended.map(TestFormat.date) ?? "sin terminar")
+                row("Target", test.target ?? "—")
+                row("Started", test.started.map(TestFormat.date) ?? "—")
+                row("Ended", test.ended.map(TestFormat.date) ?? String(localized: "not finished"))
                 if let duration = test.duration {
-                    row("Duración", TestFormat.duration(duration))
+                    row("Duration", TestFormat.duration(duration))
                 }
             }
             .font(.callout)
@@ -288,14 +288,14 @@ private struct TestHeader: View {
                     .foregroundStyle(.orange)
             }
             if let error = test.recordingError {
-                Label("Error de grabación: \(error)", systemImage: "video.slash")
+                Label("Recording error: \(error)", systemImage: "video.slash")
                     .foregroundStyle(.red)
                     .textSelection(.enabled)
             }
         }
     }
 
-    private func row(_ title: String, _ value: String) -> some View {
+    private func row(_ title: LocalizedStringKey, _ value: String) -> some View {
         GridRow {
             Text(title).foregroundStyle(.secondary)
             Text(value).textSelection(.enabled)
@@ -318,9 +318,9 @@ private struct RecordingPlayer: View {
                 PlayerView(player: player)
             } else {
                 ContentUnavailableView(
-                    "Sin video",
+                    "No Video",
                     systemImage: "video.slash",
-                    description: Text(error == nil ? "Esta prueba no tiene recording.mov." : "La grabación falló.")
+                    description: Text(error == nil ? "This test has no recording.mov." : "The recording failed.")
                 )
             }
         }
@@ -373,9 +373,9 @@ private struct StepList: View {
         .overlay {
             if steps.isEmpty {
                 ContentUnavailableView(
-                    "Sin pasos",
+                    "No Steps",
                     systemImage: "list.number",
-                    description: Text(test.hasTrace ? "trace.jsonl está vacío." : "Falta trace.jsonl.")
+                    description: Text(test.hasTrace ? "trace.jsonl is empty." : "trace.jsonl is missing.")
                 )
             }
         }
@@ -441,12 +441,12 @@ private struct StepDetail: View {
                         .padding(8)
                 } else if step.screenMissing {
                     ContentUnavailableView(
-                        "Falta la pantalla",
+                        "Screen Missing",
                         systemImage: "photo.badge.exclamationmark",
-                        description: Text("\(step.screenName ?? "") no está en la carpeta de la prueba.")
+                        description: Text("\(step.screenName ?? "") isn’t in the test’s folder.")
                     )
                 } else if step.screen == nil {
-                    ContentUnavailableView("Sin pantalla", systemImage: "photo")
+                    ContentUnavailableView("No Screen", systemImage: "photo")
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)

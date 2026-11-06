@@ -29,7 +29,7 @@ nonisolated enum SetupService {
             URL(fileURLWithPath: "/usr/bin/xcrun"), ["simctl", "list", "runtimes", "--json"]
         )
         guard status == 0 else {
-            return Check(passed: false, detail: "`xcrun simctl` no responde: instalá Xcode y abrilo una vez.")
+            return Check(passed: false, detail: String(localized: "`xcrun simctl` isn’t responding: install Xcode and open it once."))
         }
 
         struct Runtimes: Decodable {
@@ -44,14 +44,14 @@ nonisolated enum SetupService {
             .filter { $0.isAvailable && $0.name.hasPrefix("iOS") }
             .map(\.name) ?? []
         guard !names.isEmpty else {
-            return Check(passed: false, detail: "Xcode no tiene runtimes de iOS: agregalos en Xcode → Settings → Components.")
+            return Check(passed: false, detail: String(localized: "Xcode has no iOS runtimes: add them in Xcode → Settings → Components."))
         }
         return Check(passed: true, detail: names.joined(separator: ", "))
     }
 
     static func simUse() -> Check {
         guard let binary = SimUse.installedBinary() else {
-            return Check(passed: false, detail: "No está instalado.")
+            return Check(passed: false, detail: String(localized: "Not installed."))
         }
         let (status, version) = ClaudeMCPInstaller.run(binary, ["--version"])
         let shownVersion = status == 0 ? " \(version)" : ""
@@ -63,13 +63,13 @@ nonisolated enum SetupService {
     static func installSimUse() -> Check {
         let candidates = ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"]
         guard let brew = candidates.first(where: FileManager.default.isExecutableFile(atPath:)) else {
-            return Check(passed: false, detail: "No encontré Homebrew. Instalalo desde brew.sh y corré: \(simUseInstallCommand)")
+            return Check(passed: false, detail: String(localized: "Homebrew not found. Install it from brew.sh and run: \(simUseInstallCommand)"))
         }
         let brewURL = URL(fileURLWithPath: brew)
         for arguments in [["tap", "lycorp-jp/tap"], ["install", "lycorp-jp/tap/sim-use"]] {
             let (status, output) = ClaudeMCPInstaller.run(brewURL, arguments)
             guard status == 0 else {
-                return Check(passed: false, detail: "`brew \(arguments.joined(separator: " "))` falló (\(status)): \(output.suffix(400))")
+                return Check(passed: false, detail: String(localized: "`brew \(arguments.joined(separator: " "))` failed (\(status)): \(String(output.suffix(400)))"))
             }
         }
         return simUse()
@@ -83,11 +83,11 @@ nonisolated enum SetupService {
     /// in the app, a registration without one fails too: `run_instruction` needs it.
     static func claudeRegistration(expectsJevKey: Bool) -> Check {
         guard let claude = ClaudeMCPInstaller.resolveClaudeBinary() else {
-            return Check(passed: false, detail: "No encontré `claude`. Instalá Claude Code y volvé a verificar.")
+            return Check(passed: false, detail: String(localized: "`claude` not found. Install Claude Code and check again."))
         }
         let (status, output) = ClaudeMCPInstaller.run(URL(fileURLWithPath: claude), ["mcp", "get", "fingertip"])
         guard status == 0 else {
-            return Check(passed: false, detail: "fingertip no está registrado en Claude Code.")
+            return Check(passed: false, detail: String(localized: "fingertip isn’t registered in Claude Code."))
         }
 
         // The output also lists the environment, API key included: only the command line is
@@ -99,15 +99,15 @@ nonisolated enum SetupService {
             .first { $0.hasPrefix("Command:") }
             .map { $0.dropFirst("Command:".count).trimmingCharacters(in: .whitespaces) } ?? ""
         if expectsJevKey && !lines.contains(where: { $0.hasPrefix("TYPESAFE_API_KEY=") }) {
-            return Check(passed: false, detail: "Registrado sin la clave de Jev: volvé a registrar para pasársela.")
+            return Check(passed: false, detail: String(localized: "Registered without the Jev key: register again to pass it along."))
         }
         if command == bundledMCPPath {
-            return Check(passed: true, detail: "Registrado con el servidor de esta app.")
+            return Check(passed: true, detail: String(localized: "Registered with this app’s server."))
         }
         let shown = (command as NSString).abbreviatingWithTildeInPath
         guard FileManager.default.isExecutableFile(atPath: command) else {
-            return Check(passed: false, detail: "Registrado, pero apunta a un servidor que ya no existe: \(shown)")
+            return Check(passed: false, detail: String(localized: "Registered, but it points to a server that no longer exists: \(shown)"))
         }
-        return Check(passed: true, detail: "Registrado con otro servidor: \(shown)")
+        return Check(passed: true, detail: String(localized: "Registered with another server: \(shown)"))
     }
 }

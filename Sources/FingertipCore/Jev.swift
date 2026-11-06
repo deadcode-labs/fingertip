@@ -36,13 +36,13 @@ nonisolated enum JevError: FingertipError {
     var errorDescription: String? {
         switch self {
         case .missingAPIKey:
-            "Falta TYPESAFE_API_KEY: Jev solo hace falta para `run_instruction`; las demás tools andan sin ella. Cargala en Fingertip → Ajustes → Jev y volvé a registrar el MCP desde Ajustes → General (después `/mcp` en Claude Code). Registrándolo a mano: `claude mcp add fingertip -e TYPESAFE_API_KEY=… -- <ruta>/fingertip-mcp`."
+            "TYPESAFE_API_KEY is missing: Jev is only needed for `run_instruction`; the other tools work without it. Enter it in Fingertip → Settings → Jev and register the MCP again from Settings → General (then `/mcp` in Claude Code). Registering by hand: `claude mcp add fingertip -e TYPESAFE_API_KEY=… -- <path>/fingertip-mcp`."
         case .httpError(let status, let body):
-            "TypeSafe devolvió \(status): \(body)"
+            "TypeSafe returned \(status): \(body)"
         case .badResponse(let detail):
-            "Respuesta inesperada de TypeSafe: \(detail)"
+            "Unexpected response from TypeSafe: \(detail)"
         case .network(let detail):
-            "No pude llegar a TypeSafe: \(detail)"
+            "Couldn't reach TypeSafe: \(detail)"
         }
     }
 }
@@ -125,7 +125,7 @@ actor JevClient {
     static func redactingTextCandidates(in instruction: String) -> String {
         textCandidates(in: instruction)
             .sorted { $0.count > $1.count }
-            .reduce(instruction) { $0.replacingOccurrences(of: $1, with: "[texto]") }
+            .reduce(instruction) { $0.replacingOccurrences(of: $1, with: "[text]") }
     }
 
     /// Una sola request con las preguntas del paso: qué tocar, si ya terminamos y,
@@ -195,7 +195,7 @@ actor JevClient {
         let elapsedMs = Int(elapsed.seconds * 1000 + elapsed.attoseconds / 1_000_000_000_000_000)
         let answers = response.answers
         guard let choice = answers["next_element"], let goal = answers["goal_reached"]?.noul else {
-            throw JevError.badResponse("faltan next_element o goal_reached")
+            throw JevError.badResponse("missing next_element or goal_reached")
         }
 
         /// Solo las claves `eN` mapean a un elemento; `ninguno` y los scroll no.
@@ -262,7 +262,7 @@ actor JevClient {
             ]
         ]
         guard let risk = try await post(body).answers["destructive"]?.noul else {
-            throw JevError.badResponse("falta destructive")
+            throw JevError.badResponse("missing destructive")
         }
         return risk
     }

@@ -2,11 +2,10 @@
 //  ClaudeMCPInstaller.swift
 //  Fingertip
 //
-//  Corre `claude mcp add` apuntando al fingertip-mcp bundleado adentro de
-//  esta misma app, en vez de pedirle al usuario que lo haga a mano con un
-//  path dentro de .build/. Resuelve `claude` con un shell de login porque
-//  típicamente vive en el PATH de npm/nvm/Homebrew del usuario, no en el
-//  de este proceso.
+//  Runs `claude mcp add` pointing at the fingertip-mcp bundled inside this
+//  app, instead of asking the user to do it by hand with a path inside
+//  .build/. Resolves `claude` with a login shell because it usually lives
+//  in the user's npm/nvm/Homebrew PATH, not in this process's.
 //
 
 import Foundation
@@ -17,13 +16,13 @@ nonisolated enum ClaudeMCPInstaller {
         let message: String
     }
 
-    /// UserDefaults key for the "modo dios" switch in Settings. The MCP never reads it:
+    /// UserDefaults key for the "god mode" switch in Settings. The MCP never reads it:
     /// it only decides whether `install` registers the server with `FINGERTIP_UNRESTRICTED=1`.
     static let unrestrictedKey = "unrestrictedMCP"
 
     static func install(apiKey: String, unrestricted: Bool) -> Result {
         guard let claudePath = resolveClaudeBinary() else {
-            return Result(succeeded: false, message: "No encontré `claude` en el PATH del shell de login.")
+            return Result(succeeded: false, message: String(localized: "`claude` not found in the login shell’s PATH."))
         }
 
         let mcpPath = Bundle.main.bundleURL
@@ -31,7 +30,7 @@ nonisolated enum ClaudeMCPInstaller {
             .path
 
         // Without a key in this app's Keychain, keep the one already registered: re-registering
-        // (the "modo dios" switch does it) must not silently drop `run_instruction`'s key.
+        // (the "god mode" switch does it) must not silently drop `run_instruction`'s key.
         var apiKey = apiKey
         if apiKey.isEmpty {
             let (_, current) = run(URL(fileURLWithPath: claudePath), ["mcp", "get", "fingertip"])
@@ -57,9 +56,9 @@ nonisolated enum ClaudeMCPInstaller {
 
         let (status, output) = run(URL(fileURLWithPath: claudePath), arguments)
         if status == 0 {
-            return Result(succeeded: true, message: "Registrado: \(mcpPath)")
+            return Result(succeeded: true, message: String(localized: "Registered: \(mcpPath)"))
         }
-        return Result(succeeded: false, message: "Falló (\(status)): \(output)")
+        return Result(succeeded: false, message: String(localized: "Failed (\(status)): \(output)"))
     }
 
     /// The native installer puts `claude` in ~/.local/bin and adds that to PATH in .zshrc,

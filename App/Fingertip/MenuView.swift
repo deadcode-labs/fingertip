@@ -12,33 +12,33 @@ struct MenuView: View {
 
     var body: some View {
         if unrestricted {
-            Text("⚠︎ Modo dios activo: apps bloqueadas permitidas")
+            Text("⚠︎ God mode on: blocked apps allowed")
             Divider()
         }
 
-        Button("Pruebas…") {
+        Button("Tests…") {
             NSApp.activate(ignoringOtherApps: true)
             openWindow(id: "tests")
         }
 
-        Button("Ajustes…") {
+        Button("Settings…") {
             NSApp.activate(ignoringOtherApps: true)
             openSettings()
         }
         .keyboardShortcut(",")
 
-        Button("Buscar actualizaciones…") {
+        Button("Check for Updates…") {
             AppUpdater.shared.checkForUpdates()
         }
 
-        Button("Configuración inicial…") {
+        Button("Setup…") {
             NSApp.activate(ignoringOtherApps: true)
             openWindow(id: "onboarding")
         }
 
         Divider()
 
-        Button("Salir") {
+        Button("Quit Fingertip") {
             NSApp.terminate(nil)
         }
         .keyboardShortcut("q")
