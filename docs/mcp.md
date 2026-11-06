@@ -28,14 +28,17 @@ Tools: `list_targets`, `connect` (`udid` or `bundle_id` [+ `app_path`, `test`]),
 
 ## Registration
 
-Registered at user scope, so it is available from the repo of whatever app is under test; not in a shared `.mcp.json`, because the command is an absolute path into `.build/`:
+Two registrations share the name `fingertip`, and Claude Code uses the narrower scope:
+
+- **User scope → the installed app.** Fingertip's Settings → Claude Code → Instalar / actualizar runs `claude mcp add --scope user` with the `fingertip-mcp` bundled in the app it is running from, so press it from `/Applications/Fingertip.app`: pressed from an app launched by Xcode, it registers a path inside DerivedData, and later updates to the installed app no longer reach Claude Code. A Sparkle update replaces the bundled binary in place, so it only needs `/mcp` → reconnect.
+- **Local scope → the development build**, in this repo only, so sessions here run the code being changed. Not in a shared `.mcp.json`, because the command is an absolute path into `.build/`:
 
 ```bash
 swift build -c release
-claude mcp add --scope user fingertip -- "$PWD/.build/release/fingertip-mcp"
+claude mcp add --scope local fingertip -- "$PWD/.build/release/fingertip-mcp"
 ```
 
-Rebuild in release after changing the package; Claude Code picks the new binary up on its next session (or `/mcp` → reconnect).
+Rebuild in release after changing the package; Claude Code picks the new binary up on its next session (or `/mcp` → reconnect). A running session keeps the binary it launched until then. `claude mcp get fingertip` shows which registration a directory gets.
 
 ### Other MCP clients
 
