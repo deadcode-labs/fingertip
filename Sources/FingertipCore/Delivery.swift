@@ -26,18 +26,18 @@ public nonisolated struct DeliveryStep: Hashable, Sendable {
         /// Whether the strategies after this one should still run.
         public var tryNext: Bool { self == .notDelivered || self == .noEffect }
 
-        /// Emitted to the MCP outline, so in Spanish like the rest of it.
+        /// Emitted to the MCP outline.
         public var caption: String {
             switch self {
-            case .notDelivered: "no entregado"
-            case .noEffect: "sin efecto"
-            case .delivered: "entregado"
-            case .verified: "verificado"
+            case .notDelivered: "not delivered"
+            case .noEffect: "no effect"
+            case .delivered: "delivered"
+            case .verified: "verified"
             }
         }
     }
 
-    /// The Accessibility call or the fallback, e.g. `AXPress`, `AXSelected`, `clic`.
+    /// The Accessibility call or the fallback, e.g. `AXPress`, `AXSelected`, `click`.
     public var strategy: String
     public var outcome: Outcome
     /// What was read back, or why it was not delivered.
@@ -84,6 +84,6 @@ public nonisolated struct WindowInfo: Hashable, Sendable {
 
     /// `#4312 «Desktop — Local»`: how errors and listings name it.
     public var caption: String {
-        "#\(number) «\(title.isEmpty ? "sin título" : title)»"
+        "#\(number) «\(title.isEmpty ? "untitled" : title)»"
     }
 }

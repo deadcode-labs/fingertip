@@ -129,7 +129,7 @@ public nonisolated struct SimulatorDriver: ScreenDriver {
         } catch RecordingError.notRecording {
             return nil
         } catch {
-            FileHandle.standardError.write(Data("recording: no pude cerrar la grabación al desconectar: \(error.localizedDescription)\n".utf8))
+            FileHandle.standardError.write(Data("recording: couldn't close the recording on disconnect: \(error.localizedDescription)\n".utf8))
             return nil
         }
     }

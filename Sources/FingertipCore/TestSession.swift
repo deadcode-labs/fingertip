@@ -67,7 +67,7 @@ public final class TestSession {
             let key = tool == "type_text" ? "text" : "value"
             if let typed = arguments[key] as? String {
                 secrets.insert(typed)
-                arguments[key] = "[texto, \(typed.count) caracteres]"
+                arguments[key] = "[text, \(typed.count) characters]"
             }
         case "run_instruction":
             if let instruction = arguments["instruction"] as? String {
@@ -80,7 +80,7 @@ public final class TestSession {
         // Longest first, so a secret inside another doesn't leave the rest of the longer one.
         // One or two characters would also blank unrelated text in every outline.
         let text = secrets.filter { $0.count > 2 }.sorted { $0.count > $1.count }
-            .reduce(text) { $0.replacingOccurrences(of: $1, with: "[texto]") }
+            .reduce(text) { $0.replacingOccurrences(of: $1, with: "[text]") }
 
         var entry: [String: Any] = ["tool": tool, "arguments": arguments, "result": text, "ms": milliseconds]
         if let errorCode { entry["error"] = errorCode }

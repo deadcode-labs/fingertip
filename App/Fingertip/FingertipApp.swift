@@ -22,7 +22,7 @@ struct FingertipApp: App {
             SettingsView()
         }
 
-        Window("Configuración inicial", id: "onboarding") {
+        Window("Setup", id: "onboarding") {
             OnboardingView()
         }
         .windowResizability(.contentSize)
@@ -30,7 +30,7 @@ struct FingertipApp: App {
             UserDefaults.standard.bool(forKey: OnboardingView.completedKey) ? .suppressed : .presented
         )
 
-        Window("Pruebas", id: "tests") {
+        Window("Tests", id: "tests") {
             TestsView()
         }
         .defaultSize(width: 1100, height: 760)

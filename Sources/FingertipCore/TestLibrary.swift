@@ -134,13 +134,13 @@ public nonisolated enum TestLibrary {
                 if let dictionary = object as? [String: Any] {
                     json = dictionary
                 } else {
-                    problem = "test.json no es un objeto JSON"
+                    problem = "test.json is not a JSON object"
                 }
             } else {
-                problem = "test.json no es JSON válido"
+                problem = "test.json is not valid JSON"
             }
         } else {
-            problem = fm.fileExists(atPath: file.path) ? "test.json no se puede leer" : "falta test.json"
+            problem = fm.fileExists(atPath: file.path) ? "test.json can't be read" : "test.json is missing"
         }
 
         let ended = date(json["ended"])
@@ -190,7 +190,7 @@ public nonisolated enum TestLibrary {
         else {
             return TestStep(id: index, tool: "", arguments: [], result: "", errorCode: nil,
                             milliseconds: nil, at: nil, screenName: nil, screen: nil,
-                            problem: "línea de trace.jsonl rota", raw: line)
+                            problem: "broken trace.jsonl line", raw: line)
         }
 
         let arguments = ((json["arguments"] as? [String: Any]) ?? [:])

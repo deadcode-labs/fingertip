@@ -117,10 +117,10 @@ extension MacDriver {
             if steps.contains(where: { $0.outcome == .noEffect }) {
                 throw MacDriverError.noEffect("«\(caption)»", steps)
             }
-            throw MacDriverError.axFailed("tocar \(caption)", .noValue)
+            throw MacDriverError.axFailed("tap \(caption)", .noValue)
         }
         try await click(at: CGPoint(x: frame.midX, y: frame.midY))
-        steps.append(DeliveryStep("clic", .delivered))
+        steps.append(DeliveryStep("click", .delivered))
         return steps
     }
 
@@ -144,24 +144,24 @@ extension MacDriver {
             changed = fingerprint() != baseline
             return changed
         }
-        if selected && !changed { return DeliveryStep(label, .verified, "fila seleccionada") }
-        if changed { return DeliveryStep(label, .delivered, answer.detail ?? "la ventana cambió") }
-        return DeliveryStep(label, .noEffect, wasSelected == true ? "la fila ya estaba seleccionada y nada cambió" : "la fila sigue sin seleccionar y nada cambió")
+        if selected && !changed { return DeliveryStep(label, .verified, "row selected") }
+        if changed { return DeliveryStep(label, .delivered, answer.detail ?? "the window changed") }
+        return DeliveryStep(label, .noEffect, wasSelected == true ? "the row was already selected and nothing changed" : "the row is still unselected and nothing changed")
     }
 
     private func selectRow(_ row: AXUIElement) async throws -> DeliveryStep {
         let label = "AXSelected (Row)"
-        guard Self.isSettable(row, "AXSelected") else { return DeliveryStep(label, .notDelivered, "no se puede seleccionar") }
+        guard Self.isSettable(row, "AXSelected") else { return DeliveryStep(label, .notDelivered, "can't be selected") }
         // Selecting a selected row changes nothing, and reading it back would verify anything.
-        if Self.selection(of: row) == true { return DeliveryStep(label, .notDelivered, "ya estaba seleccionada") }
+        if Self.selection(of: row) == true { return DeliveryStep(label, .notDelivered, "already selected") }
         let result = AXUIElementSetAttributeValue(row, "AXSelected" as CFString, kCFBooleanTrue)
         guard result == .success else {
             if Self.neverRan(result) { return DeliveryStep(label, .notDelivered, "AXError \(result.rawValue)") }
             throw MacDriverError.axFailed("AXSelected", result)
         }
         return await poll { Self.selection(of: row) == true }
-            ? DeliveryStep(label, .verified, "fila seleccionada")
-            : DeliveryStep(label, .noEffect, "la fila sigue sin seleccionar")
+            ? DeliveryStep(label, .verified, "row selected")
+            : DeliveryStep(label, .noEffect, "the row is still unselected")
     }
 
     /// SwiftUI often exposes one control twice: a named wrapper with no action around the
@@ -176,7 +176,7 @@ extension MacDriver {
             let actions = Self.actions(of: child)
             for action in ["AXPress", "AXOpen"] where actions.contains(action) {
                 let answer = try await deliver(action, to: child)
-                if answer.ran { return DeliveryStep("\(action) (hijo)", .delivered, answer.detail) }
+                if answer.ran { return DeliveryStep("\(action) (child)", .delivered, answer.detail) }
             }
         }
         return nil
@@ -192,8 +192,8 @@ extension MacDriver {
             let step = try await deliverStep("AXCancel", to: menu, label: "AXCancel")
             guard step.outcome != .notDelivered else { return [step] }
             return await poll { Self.menu(of: control) == nil }
-                ? [DeliveryStep("AXCancel", .verified, "menú cerrado")]
-                : [DeliveryStep("AXCancel", .noEffect, "el menú sigue abierto")]
+                ? [DeliveryStep("AXCancel", .verified, "menu closed")]
+                : [DeliveryStep("AXCancel", .noEffect, "the menu is still open")]
         }
         if let open = liveOpenMenu() { throw MacDriverError.menuAlreadyOpen(open.owner) }
         return try await openMenu(of: control, owner: owner, actions: ["AXPress", "AXShowMenu"])
@@ -216,7 +216,7 @@ extension MacDriver {
             changed = fingerprint() != before
             return changed
         }
-        if opened && !changed { return [DeliveryStep("AXPress", .verified, "menú abierto")] }
+        if opened && !changed { return [DeliveryStep("AXPress", .verified, "menu open")] }
         if changed { return [DeliveryStep("AXPress", .delivered)] }
         return try await openMenu(of: button, owner: owner, actions: ["AXShowMenu"], after: [DeliveryStep("AXPress", .noEffect)])
     }
@@ -238,7 +238,7 @@ extension MacDriver {
                 continue
             }
             if await poll({ Self.menu(of: control) != nil }) {
-                steps.append(DeliveryStep(action, .verified, "menú abierto"))
+                steps.append(DeliveryStep(action, .verified, "menu open"))
                 return steps
             }
             steps.append(DeliveryStep(action, .noEffect))
@@ -246,12 +246,12 @@ extension MacDriver {
         if let frame = Self.read(control).frame, !frame.isEmpty {
             let before = fingerprint()
             if try await clickVerified(frame, until: { Self.menu(of: control) != nil }) {
-                steps.append(DeliveryStep("clic", .verified, "menú abierto"))
+                steps.append(DeliveryStep("click", .verified, "menu open"))
                 return steps
             }
             steps.append(fingerprint() != before
-                ? DeliveryStep("clic", .delivered, "la ventana cambió: no abre un menú, el clic ejecutó el botón")
-                : DeliveryStep("clic", .noEffect))
+                ? DeliveryStep("click", .delivered, "the window changed: it opens no menu, the click ran the button")
+                : DeliveryStep("click", .noEffect))
         }
         // One more look: a menu that opened after the wait would stay open behind the error.
         if await poll(for: .milliseconds(300), { Self.menu(of: control) != nil }), let late = Self.menu(of: control) {
@@ -270,7 +270,7 @@ extension MacDriver {
         let actions = Self.actions(of: control)
         let isPopUp = Self.menuRoles.contains(node.role)
         guard isPopUp || actions.contains("AXShowMenu") else {
-            throw MacDriverError.wrongElement("«\(owner)» (\(node.role)) no abre un menú: `select` es para pop-ups y botones con menú. Para lo demás, `tap`.")
+            throw MacDriverError.wrongElement("«\(owner)» (\(node.role)) doesn't open a menu: `select` is for pop-ups and menu buttons. For anything else, `tap`.")
         }
         if let open = liveOpenMenu() { throw MacDriverError.menuAlreadyOpen(open.owner) }
 
@@ -283,7 +283,7 @@ extension MacDriver {
             await cancel(menu, of: control)
             throw MacDriverError.optionNotFound(option: option, options: items.map(\.title))
         }
-        let label = "elegir «\(item.title)»"
+        let label = "choose «\(item.title)»"
         let shownBefore = Self.readBack(control)
         let pressed: Bool
         do {
@@ -294,12 +294,12 @@ extension MacDriver {
         }
         guard pressed else {
             await cancel(menu, of: control)
-            throw MacDriverError.axFailed("AXPress en «\(item.title)»", .actionUnsupported)
+            throw MacDriverError.axFailed("AXPress on «\(item.title)»", .actionUnsupported)
         }
         // Picking an item closes the menu. One still open means the press did nothing.
         guard await poll({ Self.menu(of: control) == nil }) else {
             await cancel(menu, of: control)
-            throw MacDriverError.noEffect("«\(owner)»", steps + [DeliveryStep(label, .noEffect, "el menú siguió abierto; lo cerré")])
+            throw MacDriverError.noEffect("«\(owner)»", steps + [DeliveryStep(label, .noEffect, "the menu stayed open; closed it")])
         }
 
         // The control shows the choice in its value (a pop-up) or, for a menu button, maybe in
@@ -318,9 +318,9 @@ extension MacDriver {
             return hit != nil
         }
         if let hit {
-            steps.append(DeliveryStep(label, .verified, "se lee «\(hit)»"))
+            steps.append(DeliveryStep(label, .verified, "reads «\(hit)»"))
         } else {
-            steps.append(DeliveryStep(label, .delivered, shown.first.map { "se lee «\($0)»" }))
+            steps.append(DeliveryStep(label, .delivered, shown.first.map { "reads «\($0)»" }))
         }
         return steps
     }
@@ -405,12 +405,12 @@ extension MacDriver {
         let value: CFTypeRef
         if let date = current as? Date ?? (node.role == "AXDateTimeArea" ? Date() : nil) {
             guard let parsed = Self.parseDate(text, around: date) else {
-                throw MacDriverError.invalidValue("«\(text)» no es una fecha: usá `yyyy-MM-dd HH:mm`, `yyyy-MM-dd` o `HH:mm`, en hora local.")
+                throw MacDriverError.invalidValue("«\(text)» is not a date: use `yyyy-MM-dd HH:mm`, `yyyy-MM-dd` or `HH:mm`, in local time.")
             }
             value = parsed as CFDate
         } else if current is NSNumber, !Self.textRoles.contains(node.role) {
             guard let number = Self.parseNumber(text) else {
-                throw MacDriverError.invalidValue("«\(caption)» guarda un número y «\(text)» no lo es.")
+                throw MacDriverError.invalidValue("«\(caption)» holds a number and «\(text)» is not one.")
             }
             value = number as CFNumber
         } else {
@@ -424,7 +424,7 @@ extension MacDriver {
         }
         // macOS neither reads a password field back nor, in SwiftUI, lets an AX write reach its
         // binding (measured: every write answers success and the bound string stays the same).
-        if secure { return [DeliveryStep("AXValue", .delivered, "campo de contraseña: no se puede releer, puede no haber llegado")] }
+        if secure { return [DeliveryStep("AXValue", .delivered, "password field: can't be read back, it may not have arrived")] }
 
         // Read back over a short wait: a control may apply the value a moment later.
         var after: AnyObject?
@@ -433,13 +433,13 @@ extension MacDriver {
             return Self.same(value, after)
         }
         let shown = after.flatMap(Self.describe)
-        if same { return [DeliveryStep("AXValue", .verified, shown.map { "se lee «\($0)»" })] }
+        if same { return [DeliveryStep("AXValue", .verified, shown.map { "reads «\($0)»" })] }
         // A slider or stepper rounds to its step: the write landed, on a nearby value.
         if value is NSNumber, let read = after as? NSNumber, let before = current as? NSNumber,
            read.doubleValue != before.doubleValue {
-            return [DeliveryStep("AXValue", .delivered, "se lee «\(read.stringValue)»: el control redondeó")]
+            return [DeliveryStep("AXValue", .delivered, "reads «\(read.stringValue)»: the control rounded it")]
         }
-        let step = DeliveryStep("AXValue", .noEffect, shown.map { "se lee «\($0)»" })
+        let step = DeliveryStep("AXValue", .noEffect, shown.map { "reads «\($0)»" })
         throw MacDriverError.noEffect("«\(caption)»", [step])
     }
 
@@ -477,13 +477,13 @@ extension MacDriver {
         guard !node.role.isEmpty else { throw MacDriverError.staleAlias(alias) }
         let caption = Self.name(of: node)
         guard Self.toggleRoles.contains(node.role), let before = Self.checked(element) else {
-            throw MacDriverError.wrongElement("«\(caption)» (\(node.role)) no es un checkbox, radio ni switch: no tiene un estado que alternar.")
+            throw MacDriverError.wrongElement("«\(caption)» (\(node.role)) is not a checkbox, radio button or switch: it has no state to toggle.")
         }
         if node.role == "AXRadioButton" && before {
-            throw MacDriverError.wrongElement("«\(caption)» ya está marcado, y un radio no se desmarca: marcá otro del grupo.")
+            throw MacDriverError.wrongElement("«\(caption)» is already selected, and a radio button can't be deselected: select another one in the group.")
         }
         let flipped = { Self.checked(element) == !before }
-        let detail = before ? "desmarcado" : "marcado"
+        let detail = before ? "unchecked" : "checked"
         var steps: [DeliveryStep] = []
 
         if Self.actions(of: element).contains("AXPress") {
@@ -510,10 +510,10 @@ extension MacDriver {
             // took the press but reacts late, it would flip it back. Give the press more time.
             if steps.contains(where: { $0.strategy == "AXPress" && $0.outcome == .noEffect }),
                await poll(flipped) {
-                return steps + [DeliveryStep("AXPress", .verified, "\(detail), tarde")]
+                return steps + [DeliveryStep("AXPress", .verified, "\(detail), late")]
             }
-            if try await clickVerified(frame, until: flipped) { return steps + [DeliveryStep("clic", .verified, detail)] }
-            steps.append(DeliveryStep("clic", .noEffect))
+            if try await clickVerified(frame, until: flipped) { return steps + [DeliveryStep("click", .verified, detail)] }
+            steps.append(DeliveryStep("click", .noEffect))
         }
         throw MacDriverError.noEffect("«\(caption)»", steps)
     }
@@ -583,7 +583,7 @@ extension MacDriver {
         let code = "AXError \(result.rawValue)"
         if result == .actionUnsupported || result == .attributeUnsupported, let before {
             let changed = await poll { fingerprint() != before }
-            return changed ? (true, "\(code), pero la ventana cambió") : (false, code)
+            return changed ? (true, "\(code), but the window changed") : (false, code)
         }
         if Self.neverRan(result) { return (false, code) }
         throw MacDriverError.axFailed(action, result)

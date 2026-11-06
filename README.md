@@ -23,7 +23,7 @@ It runs as **`fingertip-mcp`**, an MCP server, so Claude Code — or any other M
 
 ### With the Fingertip app
 
-Download `Fingertip.dmg` from the [latest release](https://github.com/deadcode-labs/fingertip/releases/latest), drag Fingertip to Applications and open it. The first launch walks through setup: it checks Xcode and sim-use (and installs sim-use through Homebrew), registers the MCP in Claude Code and points at the Mac permissions. The app lives in the menu bar: in **Ajustes… → Claude Code → Instalar / actualizar** it registers the bundled `fingertip-mcp` in Claude Code at user scope. Then reconnect with `/mcp`. The app updates itself through Sparkle (menu bar → **Buscar actualizaciones…**, or on its own once a day); the update carries the bundled `fingertip-mcp`, so reconnect with `/mcp` after it.
+Download `Fingertip.dmg` from the [latest release](https://github.com/deadcode-labs/fingertip/releases/latest), drag Fingertip to Applications and open it. The first launch walks through setup: it checks Xcode and sim-use (and installs sim-use through Homebrew), registers the MCP in Claude Code and points at the Mac permissions. The app lives in the menu bar: in **Settings… → Claude Code → Install / Update** it registers the bundled `fingertip-mcp` in Claude Code at user scope. Then reconnect with `/mcp`. The app updates itself through Sparkle (menu bar → **Check for Updates…**, or on its own once a day); the update carries the bundled `fingertip-mcp`, so reconnect with `/mcp` after it.
 
 While it runs, the app shows what the agent is doing: an edge indicator, a status toast, and a ghost pointer over the element a Mac action touches (your real cursor never moves).
 
@@ -69,7 +69,7 @@ After changing the package, rebuild in release and reconnect the server (`/mcp` 
 
 ### Safety
 
-Everything fingertip reads off a screen reaches the model as text, so an instruction hidden in a web page or an email could try to steer it. By default the MCP refuses to drive terminals, editors with integrated terminals, other agents' apps (Claude, Codex, ChatGPT), automation tools and launchers, System Settings and password managers. Only you can lift that, in the app's Settings → Seguridad: allow single apps (and add others to block), or turn on "Modo dios" for all of them; either way, reconnect with `/mcp`. Without the app, register the server with the variable:
+Everything fingertip reads off a screen reaches the model as text, so an instruction hidden in a web page or an email could try to steer it. By default the MCP refuses to drive terminals, editors with integrated terminals, other agents' apps (Claude, Codex, ChatGPT), automation tools and launchers, System Settings and password managers. Only you can lift that, in the app's Settings → Security: allow single apps (and add others to block), or turn on "God mode" for all of them; either way, reconnect with `/mcp`. Without the app, register the server with the variable:
 
 ```bash
 claude mcp add --scope user fingertip -e FINGERTIP_UNRESTRICTED=1 -- "$PWD/.build/release/fingertip-mcp"

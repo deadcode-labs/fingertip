@@ -27,29 +27,29 @@ public nonisolated enum BlockedApps {
 
     /// Lowercased: Launch Services resolves bundle ids case-insensitively.
     public static let builtIn: [Group] = [
-        Group(name: "Terminales", bundleIDs: [
+        Group(name: "Terminals", bundleIDs: [
             "com.apple.Terminal", "com.googlecode.iterm2", "com.mitchellh.ghostty",
             "dev.warp.Warp-Stable", "dev.warp.Warp", "net.kovidgoyal.kitty",
             "org.alacritty", "io.alacritty", "com.github.wez.wezterm",
             "co.zeit.hyper", "org.tabby",
         ]),
         // Cursor is com.todesktop.…
-        Group(name: "Editores con terminal", bundleIDs: [
+        Group(name: "Editors with a terminal", bundleIDs: [
             "com.microsoft.VSCode", "com.microsoft.VSCodeInsiders", "com.vscodium",
             "com.todesktop.230313mzl4w4u92", "com.exafunction.windsurf",
             "dev.zed.Zed", "dev.zed.Zed-Preview", "com.panic.Nova", "com.google.android.studio",
             jetBrainsPrefix,
         ]),
         // The current ChatGPT app is com.openai.codex too; com.openai.chat is the older one.
-        Group(name: "Otros agentes", bundleIDs: [
+        Group(name: "Other agents", bundleIDs: [
             "com.anthropic.claudefordesktop", "com.openai.codex", "com.openai.chat",
         ]),
-        Group(name: "Scripts y automatización", bundleIDs: [
+        Group(name: "Scripts & automation", bundleIDs: [
             "com.apple.ScriptEditor2", "com.apple.Automator", "com.apple.shortcuts",
             "com.raycast.macos", "com.runningwithcrayons.Alfred", "com.stairways.keyboardmaestro.editor",
         ]),
-        Group(name: "Sistema", bundleIDs: ["com.apple.systempreferences"]),
-        Group(name: "Contraseñas", bundleIDs: [
+        Group(name: "System", bundleIDs: ["com.apple.systempreferences"]),
+        Group(name: "Passwords", bundleIDs: [
             "com.apple.keychainaccess", "com.apple.Passwords", "com.1password.1password",
             "com.agilebits.onepassword7", "com.bitwarden.desktop", "com.lastpass.LastPass",
         ]),

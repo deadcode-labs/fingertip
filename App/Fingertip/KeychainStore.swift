@@ -2,9 +2,9 @@
 //  KeychainStore.swift
 //  Fingertip
 //
-//  TYPESAFE_API_KEY no va al JSON de ajustes (ese lo lee cualquier proceso
-//  sin pedir nada): vive en el Keychain del usuario, y solo sale de ahí para
-//  pasarla como `-e` al registrar fingertip-mcp.
+//  TYPESAFE_API_KEY stays out of the settings JSON (any process can read that
+//  without asking): it lives in the user's Keychain, and only leaves it to be
+//  passed as `-e` when fingertip-mcp is registered.
 //
 
 import Foundation

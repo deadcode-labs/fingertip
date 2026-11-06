@@ -57,13 +57,13 @@ public nonisolated enum InspectorError: FingertipError {
     public var errorDescription: String? {
         switch self {
         case .unknownReading(let reading):
-            "La lectura \(reading) ya no está: volvé a leer la pantalla y usá sus alias."
+            "Reading \(reading) is no longer kept: read the screen again and use its aliases."
         case .unknownAlias(let alias, let reading):
-            "No hay elemento @\(reading):\(alias) en la lectura \(reading)."
+            "There is no element @\(reading):\(alias) in reading \(reading)."
         case .screenChanged(let caption, let reading, let current):
-            "No toqué «\(caption)»: la pantalla cambió entre la lectura \(reading) y la \(current), y su alias puede apuntar a otro elemento. Elegí de nuevo sobre la lectura actual."
+            "Didn't tap «\(caption)»: the screen changed between reading \(reading) and \(current), and its alias may point at another element. Choose again from the current reading."
         case .noHandle(let caption):
-            "«\(caption)» no tiene alias del driver: solo se puede tocar por coordenadas."
+            "«\(caption)» has no driver alias: it can only be tapped by coordinates."
         }
     }
 }

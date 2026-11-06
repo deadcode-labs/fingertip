@@ -2,12 +2,12 @@
 //  Tools.swift
 //  fingertip-mcp
 //
-//  Las tools que ve Claude Code. Son las mismas piezas que usa la app —
-//  `ScreenInspector` sobre un `ScreenDriver`, y `JevAgent` para delegar una
-//  corrida entera—, así que un simulador y una app de macOS se manejan igual.
+//  The tools Claude Code sees. They are the same pieces the app uses —
+//  `ScreenInspector` over a `ScreenDriver`, and `JevAgent` to delegate a whole
+//  run—, so a simulator and a Mac app are driven the same way.
 //
-//  Toda acción relee la pantalla y la devuelve: los alias `@N` salen de la
-//  última lectura, y tocar sin releer apunta a la pantalla anterior.
+//  Every action re-reads the screen and returns it: `@N` aliases come from the
+//  last reading, and tapping without re-reading aims at the previous screen.
 //
 
 import AppKit
@@ -54,9 +54,9 @@ nonisolated enum ToolError: FingertipError {
              .testInProgress(let message):
             message
         case .bringToFrontDisabled:
-            "Traer ventanas al frente está desactivado: lo activa la persona en Fingertip → Ajustes → General → Ventanas. No hace falta reconectar."
+            "Bringing windows to the front is turned off: the user turns it on in Fingertip → Settings → General → Windows. No reconnect needed."
         case .noTest:
-            "No hay ninguna prueba abierta: se abre con `connect` y `test`."
+            "No test is open: open one with `connect` and `test`."
         }
     }
 }
@@ -86,69 +86,69 @@ final class Session {
     /// Past this many elements the outline suggests reading by region.
     private static let denseThreshold = 150
 
-    /// Lado mayor de la imagen que vuelve inline. La captura completa queda en
-    /// disco: una ventana retina en PNG pesa megas y no aporta para decidir.
+    /// Long side of the image returned inline. The full capture stays on disk:
+    /// a retina window as PNG weighs megabytes and adds nothing to a decision.
     private static let inlineImageSide = 1280
 
     var tools: [Tool] {
         [
             Tool(
                 name: "list_targets",
-                description: "Lista los simuladores iOS (UDID, runtime, si están booteados) y las apps de macOS que están corriendo. Es el punto de partida para elegir qué probar con `connect`.",
+                description: "Lists the iOS simulators (UDID, runtime, whether booted) and the running macOS apps. The starting point for choosing what to test with `connect`.",
                 handler: { _ in await self.listTargets() }
             ),
             Tool(
                 name: "connect",
-                description: "Elige el dispositivo sobre el que actúan las demás tools y devuelve su pantalla. Pasá `udid` para un simulador (se bootea si hace falta) o `bundle_id` para una app de macOS (se abre si no está corriendo; `app_path` desambigua cuando hay dos copias, p. ej. la build de Xcode y la de /Applications). Si hay un único simulador booteado, las demás tools se conectan solas.",
+                description: "Chooses the device the other tools act on and returns its screen. Pass `udid` for a simulator (booted if needed) or `bundle_id` for a macOS app (launched if not running; `app_path` disambiguates when there are two copies, e.g. the Xcode build and the one in /Applications). With exactly one booted simulator, the other tools connect on their own.",
                 properties: [
-                    "udid": ["type": "string", "description": "UDID del simulador."],
-                    "bundle_id": ["type": "string", "description": "Bundle id de la app de macOS."],
-                    "app_path": ["type": "string", "description": "Ruta al .app, cuando hay más de una copia con el mismo bundle id."],
-                    "test": ["type": "string", "description": "Solo si estás probando: nombre de la prueba. Abre una carpeta que guarda cada llamada, la pantalla después de cada una, un video de toda la prueba y las corridas de Jev, hasta `end_test`. Sin `test`, usar la app no deja nada en disco."]
+                    "udid": ["type": "string", "description": "Simulator UDID."],
+                    "bundle_id": ["type": "string", "description": "Bundle id of the macOS app."],
+                    "app_path": ["type": "string", "description": "Path to the .app, when more than one copy has the same bundle id."],
+                    "test": ["type": "string", "description": "Only when testing: the test's name. Opens a folder that keeps every call, the screen after each one, a video of the whole test and the Jev runs, until `end_test`. Without `test`, using the app leaves nothing on disk."]
                 ],
                 handler: { await self.connect($0) }
             ),
             Tool(
                 name: "read_screen",
-                description: "Lee la pantalla actual como lista de elementos agrupados por región: `@L:N Tipo \"rótulo\" #identifier (x,y anchoxalto)`, donde L es el número de lectura y N el elemento. `tap` acepta el alias completo; si la pantalla cambió antes de ese elemento, lo rechaza en vez de tocar otra cosa. Los textos largos vienen cortados en una línea con «…»; `full: true` los trae enteros. En una pantalla densa, `skeleton: true` trae solo las regiones con cuántos elementos tiene cada una, y `region` muestra una sola: las acciones siguientes también muestran solo esa, hasta un `read_screen` sin `region`. Si una app de macOS tiene varias ventanas, falla con `ambiguous_window` hasta que elijas una con `window` (el número de `list_windows`); la elección queda para las tools siguientes.",
+                description: "Reads the current screen as a list of elements grouped by region: `@L:N Type \"label\" #identifier (x,y widthxheight)`, where L is the reading number and N the element. `tap` takes the full alias; if the screen changed before that element, it refuses instead of tapping something else. Long texts come cut to one line with «…»; `full: true` returns them whole. On a dense screen, `skeleton: true` returns only the regions with how many elements each has, and `region` shows a single one: later actions also show only that one, until a `read_screen` without `region`. If a macOS app has several windows, it fails with `ambiguous_window` until you choose one with `window` (the number from `list_windows`); the choice holds for later tools.",
                 properties: [
-                    "full": ["type": "boolean", "description": "Textos completos, sin cortar."],
-                    "skeleton": ["type": "boolean", "description": "Solo las regiones y cuántos elementos tiene cada una."],
-                    "region": ["type": "string", "description": "Nombre de la región a mostrar, tal como aparece entre corchetes."],
-                    "window": ["type": "integer", "description": "macOS: número de ventana de `list_windows`. Lee esa y la deja elegida."]
+                    "full": ["type": "boolean", "description": "Full texts, uncut."],
+                    "skeleton": ["type": "boolean", "description": "Only the regions and how many elements each has."],
+                    "region": ["type": "string", "description": "Name of the region to show, as it appears in brackets."],
+                    "window": ["type": "integer", "description": "macOS: window number from `list_windows`. Reads that window and keeps it chosen."]
                 ],
                 handler: { await self.readScreen($0) }
             ),
             Tool(
                 name: "list_windows",
-                description: "macOS: las ventanas de la app conectada, con su número, título y posición, y cuál tiene el foco y cuál está elegida. Elegí una con `read_screen` y `window`.",
+                description: "macOS: the connected app's windows, with number, title and position, and which one has focus and which is chosen. Choose one with `read_screen` and `window`.",
                 handler: { _ in await self.listWindows() }
             ),
             Tool(
                 name: "bring_to_front",
-                description: "macOS: trae al frente una ventana de la app y la deja elegida; si está en otro escritorio, cambia a ese escritorio (lo que ve la persona cambia). Sin `window`, la elegida o la única. Devuelve la pantalla. Solo funciona si la persona lo permitió en Fingertip → Ajustes; si no, falla con `bring_to_front_disabled`.",
+                description: "macOS: brings one of the app's windows to the front and keeps it chosen; if it is on another desktop, switches to that desktop (what the user sees changes). Without `window`, the chosen or only one. Returns the screen. Works only if the user allowed it in Fingertip → Settings; otherwise fails with `bring_to_front_disabled`.",
                 properties: [
-                    "window": ["type": "integer", "description": "Número de ventana de `list_windows`."]
+                    "window": ["type": "integer", "description": "Window number from `list_windows`."]
                 ],
                 handler: { await self.bringToFront($0) }
             ),
             Tool(
                 name: "wait_for",
-                description: "Espera dentro del servidor, sin devolverte el turno, a que aparezca un elemento cuyo texto, rótulo o #identifier contenga `text` (sin distinguir mayúsculas ni acentos), y devuelve la pantalla apenas aparece. Revisa cada ~0,25 s. Con `tap: true` lo toca en el acto: es la forma de alcanzar lo que dura poco, como una card de aprobación. Con `gone: true` espera a que desaparezca (p. ej. un «Trabajando…»). Si hay varios, gana el que coincide exacto y, entre esos, un botón.",
+                description: "Waits inside the server, without handing the turn back, for an element whose text, label or #identifier contains `text` (ignoring case and accents), and returns the screen as soon as it appears. Checks every ~0.25 s. With `tap: true` it taps it on the spot: the way to catch something short-lived, like an approval card. With `gone: true` it waits for it to disappear (e.g. a «Working…»). If several match, an exact match wins and, among those, a button.",
                 properties: [
                     "text": ["type": "string"],
-                    "tap": ["type": "boolean", "description": "Tocarlo apenas aparece."],
-                    "gone": ["type": "boolean", "description": "Esperar a que desaparezca en vez de a que aparezca."],
-                    "timeout": ["type": "number", "description": "Segundos; por defecto 30, máximo 120."]
+                    "tap": ["type": "boolean", "description": "Tap it as soon as it appears."],
+                    "gone": ["type": "boolean", "description": "Wait for it to disappear instead of appear."],
+                    "timeout": ["type": "number", "description": "Seconds; 30 by default, 120 at most."]
                 ],
                 required: ["text"],
                 handler: { await self.waitFor($0) }
             ),
             Tool(
                 name: "tap",
-                description: "Toca un elemento por su alias `@L:N` (preferido) o por coordenadas `x`,`y` en el espacio de la lectura. Antes de tocar relee la pantalla: si cambió algo hasta ese elemento, no toca y devuelve la pantalla nueva para elegir de nuevo. Devuelve la pantalla resultante. En un campo de texto, tocar le da el foco: después usá `type_text`. En macOS, tocar un pop-up abre su menú y la lectura lista sus ítems en la región «Menú» (`Mode › Scientific`); tocar uno lo elige, y tocar de nuevo el pop-up lo cierra. La línea «Entrega» dice qué se intentó y qué se verificó: `sin efecto` es que la app aceptó la acción y no cambió nada.",
+                description: "Taps an element by its alias `@L:N` (preferred) or by coordinates `x`,`y` in the reading's space. It re-reads the screen before tapping: if anything up to that element changed, it does not tap and returns the new screen to choose again. Returns the resulting screen. On a text field, a tap gives it focus: then use `type_text`. On macOS, tapping a pop-up opens its menu and the reading lists its items in the «Menú» region (`Mode › Scientific`); tapping one picks it, and tapping the pop-up again closes it. The «Delivery» line says what was tried and what was verified: `no effect` means the app took the action and nothing changed.",
                 properties: [
-                    "alias": ["type": "string", "description": "El alias completo, como aparece en la lectura: `12:5` es el elemento 5 de la lectura 12."],
+                    "alias": ["type": "string", "description": "The full alias, as it appears in the reading: `12:5` is element 5 of reading 12."],
                     "x": ["type": "number"],
                     "y": ["type": "number"]
                 ],
@@ -156,19 +156,19 @@ final class Session {
             ),
             Tool(
                 name: "select",
-                description: "macOS: abre el menú de un pop-up o botón con menú (`alias`), elige el ítem `option` (sin distinguir mayúsculas ni acentos) y relee el control. Si no hay ese ítem, cierra el menú y lista las opciones. Si ya hay un menú abierto, lo rechaza con `menu_already_open`.",
+                description: "macOS: opens the menu of a pop-up or menu button (`alias`), picks the item `option` (ignoring case and accents) and reads the control back. If there is no such item, it closes the menu and lists the options. If a menu is already open, it refuses with `menu_already_open`.",
                 properties: [
-                    "alias": ["type": "string", "description": "El alias completo del control, `12:5`."],
-                    "option": ["type": "string", "description": "El texto del ítem del menú."]
+                    "alias": ["type": "string", "description": "The control's full alias, `12:5`."],
+                    "option": ["type": "string", "description": "The menu item's text."]
                 ],
                 required: ["alias", "option"],
                 handler: { await self.select($0) }
             ),
             Tool(
                 name: "set_value",
-                description: "macOS: escribe el valor de un control de una vez, sin teclear: texto en un campo, una fecha en un date picker (`yyyy-MM-dd HH:mm`, `yyyy-MM-dd` o `HH:mm`, hora local), un número en un slider. Relee el valor; si no cambió, falla con `no_effect`. Un elemento de solo lectura da `not_settable`.",
+                description: "macOS: writes a control's value in one go, without typing: text in a field, a date in a date picker (`yyyy-MM-dd HH:mm`, `yyyy-MM-dd` or `HH:mm`, local time), a number in a slider. Reads the value back; if it did not change, fails with `no_effect`. A read-only element gives `not_settable`.",
                 properties: [
-                    "alias": ["type": "string", "description": "El alias completo del control, `12:5`."],
+                    "alias": ["type": "string", "description": "The control's full alias, `12:5`."],
                     "value": ["type": "string"]
                 ],
                 required: ["alias", "value"],
@@ -176,40 +176,40 @@ final class Session {
             ),
             Tool(
                 name: "toggle",
-                description: "macOS: alterna un checkbox, radio o switch y verifica que cambió (AXPress, después AXValue, después un clic real).",
-                properties: ["alias": ["type": "string", "description": "El alias completo del control, `12:5`."]],
+                description: "macOS: flips a checkbox, radio button or switch and checks that it flipped (AXPress, then AXValue, then a real click).",
+                properties: ["alias": ["type": "string", "description": "The control's full alias, `12:5`."]],
                 required: ["alias"],
                 handler: { await self.toggle($0) }
             ),
             Tool(
                 name: "type_text",
-                description: "Escribe en el campo con foco (tocalo antes). En el simulador solo hay teclado US: sin acentos, ñ ni símbolos fuera de ASCII. En macOS acepta cualquier texto.",
+                description: "Types into the focused field (tap it first). The simulator only has a US keyboard: no accents, ñ or symbols outside ASCII. On macOS any text works.",
                 properties: ["text": ["type": "string"]],
                 required: ["text"],
                 handler: { await self.typeText($0) }
             ),
             Tool(
                 name: "erase_text",
-                description: "Borra `count` caracteres del campo con foco, desde el final.",
+                description: "Deletes `count` characters from the end of the focused field.",
                 properties: ["count": ["type": "integer", "minimum": 1]],
                 required: ["count"],
                 handler: { await self.eraseText($0) }
             ),
             Tool(
                 name: "submit",
-                description: "Aprieta Return en el campo con foco, sin salir de él: dispara el envío del formulario (el `onSubmit`). Tocá el campo antes.",
+                description: "Presses Return in the focused field without leaving it: submits the form (its `onSubmit`). Tap the field first.",
                 handler: { _ in await self.perform(.submit) }
             ),
             Tool(
                 name: "scroll",
-                description: "Desplaza el contenido. `down` muestra lo que está más abajo, `up` lo que está más arriba. La lectura solo trae lo visible: si lo que buscás no aparece, scrolleá.",
+                description: "Scrolls the content. `down` shows what is further down, `up` what is further up. A reading only has what is visible: if what you are looking for is not there, scroll.",
                 properties: ["direction": ["type": "string", "enum": ["down", "up"]]],
                 required: ["direction"],
                 handler: { await self.scroll($0) }
             ),
             Tool(
                 name: "swipe",
-                description: "Desliza entre dos puntos en el espacio de la lectura (carruseles, gestos de cerrar). Para scroll vertical común, `scroll` es más simple.",
+                description: "Swipes between two points in the reading's space (carousels, dismiss gestures). For plain vertical scrolling, `scroll` is simpler.",
                 properties: [
                     "from_x": ["type": "number"], "from_y": ["type": "number"],
                     "to_x": ["type": "number"], "to_y": ["type": "number"]
@@ -219,56 +219,56 @@ final class Session {
             ),
             Tool(
                 name: "press_button",
-                description: "Botón de hardware del simulador. No existe en macOS.",
+                description: "A simulator hardware button. Not available on macOS.",
                 properties: ["button": ["type": "string", "enum": ["home", "lock", "side-button", "siri", "apple-pay"]]],
                 required: ["button"],
                 handler: { await self.pressButton($0) }
             ),
             Tool(
                 name: "screenshot",
-                description: "Captura de la pantalla del simulador o de la ventana de la app. Devuelve la imagen reducida y la ruta del PNG completo. Úsala para verificar lo visual (layout, colores, imágenes); para saber qué hay y qué tocar, `read_screen` es más barato.",
+                description: "Captures the simulator screen or the app's window. Returns the reduced image and the path to the full PNG. Use it to check visuals (layout, colors, images); to know what is there and what to tap, `read_screen` is cheaper.",
                 handler: { _ in await self.screenshot() }
             ),
             Tool(
                 name: "start_recording",
-                description: "Empieza a grabar un video (.mov, sin audio) del simulador o de la ventana de la app. Una sola grabación a la vez; las acciones siguientes (tap, scroll…) quedan en el video. Termínala con `stop_recording`.",
+                description: "Starts recording a video (.mov, no audio) of the simulator or the app's window. One recording at a time; later actions (tap, scroll…) end up in the video. End it with `stop_recording`.",
                 handler: { _ in await self.startRecording() }
             ),
             Tool(
                 name: "stop_recording",
-                description: "Termina la grabación en curso y devuelve la ruta del .mov. Al desconectar o cerrar el servidor con una grabación abierta, también se cierra el archivo.",
+                description: "Ends the current recording and returns the path to the .mov. Disconnecting or closing the server with a recording open also closes the file.",
                 handler: { _ in await self.stopRecording() }
             ),
             Tool(
                 name: "relaunch_app",
-                description: "Mata la app y la vuelve a abrir, y espera a que su pantalla esté lista (hasta 15 s). Sirve para arrancar cada prueba desde la pantalla inicial. Una app de macOS corriendo bajo el depurador de Xcode no se relanza.",
+                description: "Kills the app, opens it again and waits for its screen to be ready (up to 15 s). Use it to start each test from the initial screen. A macOS app running under the Xcode debugger is not relaunched.",
                 properties: ["bundle_id": ["type": "string"]],
                 required: ["bundle_id"],
                 handler: { await self.relaunchApp($0) }
             ),
             Tool(
                 name: "terminate_app",
-                description: "Cierra la app (forzado).",
+                description: "Force-quits the app.",
                 properties: ["bundle_id": ["type": "string"]],
                 required: ["bundle_id"],
                 handler: { await self.terminateApp($0) }
             ),
             Tool(
                 name: "run_instruction",
-                description: "Delega una instrucción entera a Jev (TypeSafe System One): elige y ejecuta pasos hasta que la da por cumplida, se queda sin confianza (`needs_user`) o llega a 10 pasos. Con `bundle_id`, relanza la app antes de empezar. Devuelve el resultado, los pasos y la ruta del log JSONL con capturas. Necesita TYPESAFE_API_KEY en el entorno del servidor.",
+                description: "Delegates a whole instruction to Jev (TypeSafe System One): it chooses and runs steps until it judges the instruction done, runs out of confidence (`needs_user`) or reaches 10 steps. With `bundle_id`, relaunches the app first. Returns the result, the steps and the path to the JSONL log with screenshots. Needs TYPESAFE_API_KEY in the server's environment.",
                 properties: [
-                    "instruction": ["type": "string", "description": "Qué hacer, en lenguaje natural. El texto a escribir va entre comillas."],
-                    "bundle_id": ["type": "string", "description": "App bajo prueba; vacío arranca desde donde esté."]
+                    "instruction": ["type": "string", "description": "What to do, in natural language. Text to type goes in double quotes."],
+                    "bundle_id": ["type": "string", "description": "App under test; empty starts from wherever the device is."]
                 ],
                 required: ["instruction"],
                 handler: { await self.runInstruction($0) }
             ),
             Tool(
                 name: "end_test",
-                description: "Cierra la prueba abierta con `connect(test:)` con su veredicto: termina el video y devuelve la carpeta. Un `connect` nuevo o el cierre del servidor también la cierran, sin veredicto.",
+                description: "Closes the test opened with `connect(test:)` with its verdict: ends the video and returns the folder. A new `connect` or the server closing also close it, without a verdict.",
                 properties: [
-                    "passed": ["type": "boolean", "description": "Si la prueba pasó."],
-                    "notes": ["type": "string", "description": "Qué se probó y, si falló, qué se vio."]
+                    "passed": ["type": "boolean", "description": "Whether the test passed."],
+                    "notes": ["type": "string", "description": "What was tested and, if it failed, what was seen."]
                 ],
                 required: ["passed"],
                 handler: { await self.endTest($0) }
@@ -304,18 +304,18 @@ final class Session {
         do {
             test = try TestSession(name: name, target: Self.describe(target))
         } catch {
-            return "No pude crear la carpeta de la prueba (\(error.localizedDescription)); sigo sin registrar."
+            return "Couldn't create the test folder (\(error.localizedDescription)); continuing without recording the test."
         }
         self.test = test
         agent.runsDirectory = test.jevDirectory
-        var lines = ["Prueba «\(name)» abierta: \(test.folder.path)"]
+        var lines = ["Test «\(name)» open: \(test.folder.path)"]
         do {
             try await inspector.driver?.startRecording(to: test.recording)
-            lines.append("Grabando la prueba entera. Cerrala con `end_test`.")
+            lines.append("Recording the whole test. Close it with `end_test`.")
         } catch {
             let reason = fingertipError(error).errorDescription ?? "\(error)"
             test.recordingFailed(reason)
-            lines.append("Sin video: \(reason)")
+            lines.append("No video: \(reason)")
         }
         return lines.joined(separator: "\n")
     }
@@ -340,54 +340,54 @@ final class Session {
 
     private func endTest(_ arguments: [String: Any]) async -> ToolResult {
         guard test != nil else { return .error(ToolError.noTest) }
-        guard let passed = arguments["passed"] as? Bool else { return .invalid("Falta `passed`: si la prueba pasó.") }
+        guard let passed = arguments["passed"] as? Bool else { return .invalid("Missing `passed`: whether the test passed.") }
         guard let test = await closeTest(passed: passed, notes: arguments["notes"] as? String) else {
             return .error(ToolError.noTest)
         }
-        return .text("Prueba «\(test.name)» cerrada: \(passed ? "pasó" : "falló").\nCarpeta: \(test.folder.path)")
+        return .text("Test «\(test.name)» closed: \(passed ? "passed" : "failed").\nFolder: \(test.folder.path)")
     }
 
     // MARK: - Status toast
 
-    /// The call in a few words, for the Fingertip app's toast. Data, so in Spanish.
+    /// The call in a few words, for the Fingertip app's toast.
     func status(_ tool: String, _ arguments: [String: Any]) -> String {
         func quoted(_ text: String) -> String {
             "«\(text.count > 40 ? text.prefix(39) + "…" : text)»"
         }
         let text = arguments["text"] as? String ?? ""
         switch tool {
-        case "list_targets": return "Buscando dispositivos"
-        case "connect": return "Conectando a \(arguments["bundle_id"] as? String ?? arguments["udid"] as? String ?? "un dispositivo")"
-        case "read_screen": return "Leyendo la pantalla"
-        case "wait_for": return (arguments["gone"] as? Bool ?? false) ? "Esperando que se vaya \(quoted(text))" : "Esperando \(quoted(text))"
-        case "tap": return "Tocando \(tapTarget(arguments))"
-        case "select": return "Eligiendo \(quoted(arguments["option"] as? String ?? "")) en \(tapTarget(arguments))"
+        case "list_targets": return "Looking for devices"
+        case "connect": return "Connecting to \(arguments["bundle_id"] as? String ?? arguments["udid"] as? String ?? "a device")"
+        case "read_screen": return "Reading the screen"
+        case "wait_for": return (arguments["gone"] as? Bool ?? false) ? "Waiting for \(quoted(text)) to go" : "Waiting for \(quoted(text))"
+        case "tap": return "Tapping \(tapTarget(arguments))"
+        case "select": return "Choosing \(quoted(arguments["option"] as? String ?? "")) in \(tapTarget(arguments))"
         // The value may be a password, like typed text.
-        case "set_value": return "Cambiando el valor de \(tapTarget(arguments))"
-        case "toggle": return "Alternando \(tapTarget(arguments))"
-        case "list_windows": return "Listando ventanas"
-        case "bring_to_front": return "Trayendo la ventana al frente"
+        case "set_value": return "Setting the value of \(tapTarget(arguments))"
+        case "toggle": return "Toggling \(tapTarget(arguments))"
+        case "list_windows": return "Listing windows"
+        case "bring_to_front": return "Bringing the window to the front"
         // Typed text and instructions may carry a password: the toast is on screen and in recordings.
-        case "type_text": return "Escribiendo \(text.count) caracteres"
-        case "erase_text": return "Borrando \(arguments["count"] as? Int ?? 0) caracteres"
+        case "type_text": return "Typing \(text.count) characters"
+        case "erase_text": return "Deleting \(arguments["count"] as? Int ?? 0) characters"
         case "submit": return "Return"
-        case "scroll": return (arguments["direction"] as? String) == "up" ? "Scrolleando hacia arriba" : "Scrolleando hacia abajo"
-        case "swipe": return "Deslizando"
-        case "press_button": return "Botón \(arguments["button"] as? String ?? "")"
-        case "screenshot": return "Capturando la pantalla"
-        case "start_recording": return "Empezando a grabar"
-        case "stop_recording": return "Terminando la grabación"
-        case "relaunch_app": return "Relanzando \(arguments["bundle_id"] as? String ?? "la app")"
-        case "terminate_app": return "Cerrando \(arguments["bundle_id"] as? String ?? "la app")"
-        case "run_instruction": return "Jev: corriendo una instrucción"
-        case "end_test": return (arguments["passed"] as? Bool ?? false) ? "Prueba cerrada: pasó" : "Prueba cerrada: falló"
+        case "scroll": return (arguments["direction"] as? String) == "up" ? "Scrolling up" : "Scrolling down"
+        case "swipe": return "Swiping"
+        case "press_button": return "Button \(arguments["button"] as? String ?? "")"
+        case "screenshot": return "Taking a screenshot"
+        case "start_recording": return "Starting to record"
+        case "stop_recording": return "Stopping the recording"
+        case "relaunch_app": return "Relaunching \(arguments["bundle_id"] as? String ?? "the app")"
+        case "terminate_app": return "Quitting \(arguments["bundle_id"] as? String ?? "the app")"
+        case "run_instruction": return "Jev: running an instruction"
+        case "end_test": return (arguments["passed"] as? Bool ?? false) ? "Test closed: passed" : "Test closed: failed"
         default: return tool
         }
     }
 
     /// The element's caption when the alias is from the current reading.
     private func tapTarget(_ arguments: [String: Any]) -> String {
-        guard let alias = arguments["alias"] as? String else { return "un punto" }
+        guard let alias = arguments["alias"] as? String else { return "a point" }
         let parts = alias.trimmingCharacters(in: CharacterSet(charactersIn: "@")).split(separator: ":").compactMap { Int($0) }
         if parts.count == 2, parts[0] == inspector.reading,
            let element = inspector.elements.first(where: { $0.alias == parts[1] }) {
@@ -396,7 +396,7 @@ final class Session {
         return "@\(alias)"
     }
 
-    // MARK: - Apps bloqueadas
+    // MARK: - Blocked apps
 
     /// The list lives in `BlockedApps`; the user edits it in the app's Security pane.
     /// God mode is decided when registering the server, not by Claude: a tool argument
@@ -421,38 +421,38 @@ final class Session {
 
     private static func blockedError(_ bundleID: String) -> ToolResult {
         .error(ToolError.blockedApp("""
-        \(bundleID) está bloqueada: escribir en ella puede correr comandos o exponer secretos. \
-        Solo el usuario puede liberarla, en Ajustes de Fingertip → Seguridad o registrando el servidor con `-e FINGERTIP_UNRESTRICTED=1`.
+        \(bundleID) is blocked: typing into it can run commands or expose secrets. \
+        Only the user can unblock it, in Fingertip → Settings → Security or by registering the server with `-e FINGERTIP_UNRESTRICTED=1`.
         """))
     }
 
-    // MARK: - Dispositivo
+    // MARK: - Device
 
     private func listTargets() async -> ToolResult {
-        var lines: [String] = ["Simuladores:"]
+        var lines: [String] = ["Simulators:"]
         var booted: Set<String>?
         do {
             let devices = try await simctl.listDevices()
-            lines += devices.map { "  \($0.name) — \($0.runtime) — \($0.udid)\($0.isBooted ? " — booteado" : "")" }
+            lines += devices.map { "  \($0.name) — \($0.runtime) — \($0.udid)\($0.isBooted ? " — booted" : "")" }
             booted = Set(devices.filter(\.isBooted).map(\.udid))
         } catch {
-            lines.append("  (no pude listarlos: \(Self.describe(error)))")
+            lines.append("  (couldn't list them: \(Self.describe(error)))")
         }
         lines.append("")
-        lines.append("Apps de macOS corriendo:")
+        lines.append("Running macOS apps:")
         let apps = MacApp.running()
         let settings = FingertipSettings.load()
-        lines += apps.map { "  \($0.name) — \($0.bundleID) — \($0.bundleURL.path)\(Self.isBlocked($0.bundleID, settings: settings) ? " — bloqueada" : "")" }
+        lines += apps.map { "  \($0.name) — \($0.bundleID) — \($0.bundleURL.path)\(Self.isBlocked($0.bundleID, settings: settings) ? " — blocked" : "")" }
         if let target {
-            // La conexión no se entera si la app se cerró o el simulador se apagó:
-            // decirlo acá evita que alguien crea que sigue apuntando a algo vivo.
+            // The connection doesn't notice the app quit or the simulator shut down:
+            // saying it here keeps anyone from thinking it still points at something alive.
             let alive = switch target {
             case .simulator(let udid): booted?.contains(udid) ?? true
             case .mac(let app): apps.contains(app)
             }
             lines += ["", alive
-                ? "Conectado a: \(Self.describe(target))"
-                : "Conectado a: \(Self.describe(target)) — ya no está corriendo; usá `connect`."]
+                ? "Connected to: \(Self.describe(target))"
+                : "Connected to: \(Self.describe(target)) — no longer running; use `connect`."]
         }
         return .text(lines.joined(separator: "\n"))
     }
@@ -461,7 +461,7 @@ final class Session {
         let udid = arguments["udid"] as? String
         let bundleID = arguments["bundle_id"] as? String
         guard (udid == nil) != (bundleID == nil) else {
-            return .invalid("Pasá `udid` (simulador) o `bundle_id` (app de macOS), uno de los dos.")
+            return .invalid("Pass either `udid` (simulator) or `bundle_id` (macOS app), not both.")
         }
 
         let target: Target
@@ -475,9 +475,9 @@ final class Session {
         } else {
             if Self.isBlocked(bundleID!) { return Self.blockedError(bundleID!) }
             guard let app = Self.macApp(bundleID: bundleID!, path: arguments["app_path"] as? String) else {
-                return .error(ToolError.appNotFound("No encontré \(bundleID!) corriendo ni instalado (o `app_path` es otra app)."))
+                return .error(ToolError.appNotFound("Couldn't find \(bundleID!) running or installed (or `app_path` is a different app)."))
             }
-            // Se chequea también lo resuelto: lo que se abre es la app, no el texto pedido.
+            // The resolved app is checked too: what opens is the app, not the requested text.
             if Self.isBlocked(app.bundleID) { return Self.blockedError(app.bundleID) }
             let running = MacApp.running().contains(app)
             target = .mac(app)
@@ -493,7 +493,7 @@ final class Session {
         let closed = await closeTest(passed: nil, notes: nil)
         var result = await connect(to: target)
         var notes: [String] = []
-        if let closed { notes.append("Se cerró la prueba «\(closed.name)» sin veredicto: \(closed.folder.path)") }
+        if let closed { notes.append("Closed test «\(closed.name)» without a verdict: \(closed.folder.path)") }
         if let name = (arguments["test"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
            !name.isEmpty, inspector.connectionState == .ready {
             notes.append(await openTest(name, on: target))
@@ -507,32 +507,32 @@ final class Session {
     private func connect(to target: Target) async -> ToolResult {
         // Switching devices closes a recording in progress; say so, or the agent loses the file.
         let closed = inspector.driver != nil ? await inspector.disconnect() : nil
-        let closedNote = closed.map { "Se cerró la grabación en curso al cambiar de dispositivo: \($0.path)\n\n" } ?? ""
+        let closedNote = closed.map { "Closed the recording in progress when switching devices: \($0.path)\n\n" } ?? ""
         // An agent must say which window it means: "the focused one" is whatever the user clicked last.
         await inspector.connect(target)
         guard inspector.connectionState == .ready else {
-            return .error(inspector.failure ?? ToolError.notConnected("No pude conectarme."))
+            return .error(inspector.failure ?? ToolError.notConnected("Couldn't connect."))
         }
         self.target = target
         focusRegion = nil
-        let connected = "\(closedNote)Conectado a \(Self.describe(target)) vía \(inspector.driver?.name ?? "?")."
+        let connected = "\(closedNote)Connected to \(Self.describe(target)) via \(inspector.driver?.name ?? "?")."
         // Connected, but nothing read yet: the error names the windows to choose from.
         if let failure = inspector.failure { return .error(failure, appending: connected) }
         return .text("\(connected)\n\n\(outline())")
     }
 
-    /// La que corre gana sobre la instalada: es la que el usuario está mirando.
-    /// Entre dos copias corriendo, la ruta decide; sin ruta, la primera.
+    /// A running copy wins over an installed one: it is the one the user is looking at.
+    /// Between two running copies the path decides; without a path, the first.
     private static func macApp(bundleID: String, path: String?) -> MacApp? {
-        // Un .app es un directorio: sin el hint, la URL queda sin `/` final y no
-        // es igual a la de `NSRunningApplication.bundleURL`, que sí la tiene.
+        // An .app is a directory: without the hint the URL has no trailing `/` and
+        // doesn't equal `NSRunningApplication.bundleURL`, which has one.
         let wanted = path.map { URL(filePath: $0, directoryHint: .isDirectory).standardizedFileURL }
         if let running = MacApp.running().first(where: { $0.bundleID == bundleID && (wanted == nil || $0.bundleURL == wanted) }) {
             return running
         }
         guard let url = wanted ?? NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return nil }
-        // `app_path` manda en lo que se abre: si apunta a otra app, se rechaza
-        // en vez de lanzar esa con el bundle id pedido como disfraz.
+        // `app_path` decides what opens: if it points at another app, it is refused
+        // instead of launching that one disguised as the requested bundle id.
         guard let actual = Bundle(url: url)?.bundleIdentifier,
               actual.caseInsensitiveCompare(bundleID) == .orderedSame
         else { return nil }
@@ -540,23 +540,23 @@ final class Session {
         return MacApp(bundleID: actual, name: name, bundleURL: url.standardizedFileURL)
     }
 
-    /// Con un único simulador booteado no hace falta elegir: es el caso común.
+    /// With exactly one booted simulator there is nothing to choose: the common case.
     private func ensureConnected() async -> ToolResult? {
         if inspector.driver != nil { return nil }
         let booted = ((try? await simctl.listDevices()) ?? []).filter(\.isBooted)
         guard booted.count == 1 else {
-            return .error(ToolError.notConnected("No hay dispositivo conectado y hay \(booted.count) simuladores booteados: usá `list_targets` y `connect`."))
+            return .error(ToolError.notConnected("No device connected and \(booted.count) simulators are booted: use `list_targets` and `connect`."))
         }
         let result = await connect(to: .simulator(udid: booted[0].udid))
         return result.isError ? result : nil
     }
 
-    // MARK: - Pantalla
+    // MARK: - Screen
 
     private func readScreen(_ arguments: [String: Any]) async -> ToolResult {
         if let failure = await ensureConnected() { return failure }
         if let raw = arguments["window"] {
-            guard let number = Self.int(raw) else { return .invalid("`window` es el número de `list_windows`.") }
+            guard let number = Self.int(raw) else { return .invalid("`window` is the number from `list_windows`.") }
             await inspector.chooseWindow(number: number)
         } else {
             await inspector.readScreen()
@@ -565,7 +565,7 @@ final class Session {
         let skeleton = arguments["skeleton"] as? Bool ?? false
         if let region = arguments["region"] as? String, !region.isEmpty, !skeleton {
             guard inspector.regions.contains(region) else {
-                return .invalid("No hay región «\(region)». Están: \(inspector.regions.map { "«\($0)»" }.joined(separator: ", ")).")
+                return .invalid("There is no region «\(region)». There are: \(inspector.regions.map { "«\($0)»" }.joined(separator: ", ")).")
             }
             focusRegion = region
         } else {
@@ -574,14 +574,14 @@ final class Session {
         return .text(outline(full: arguments["full"] as? Bool ?? false, skeleton: skeleton))
     }
 
-    /// Lee en loop hasta que el elemento aparece (o desaparece). Esperar acá y no
-    /// en el modelo es todo el punto: una vuelta de Claude tarda segundos, una
-    /// lectura menos de 0,1 s en macOS y ~0,5 s en el simulador.
+    /// Reads in a loop until the element appears (or disappears). Waiting here and not
+    /// in the model is the whole point: a Claude turn takes seconds, a reading under
+    /// 0.1 s on macOS and ~0.5 s on the simulator.
     private func waitFor(_ arguments: [String: Any]) async -> ToolResult {
-        guard let query = arguments["text"] as? String, !query.isEmpty else { return .invalid("Falta `text`.") }
+        guard let query = arguments["text"] as? String, !query.isEmpty else { return .invalid("Missing `text`.") }
         let shouldTap = arguments["tap"] as? Bool ?? false
         let gone = arguments["gone"] as? Bool ?? false
-        guard !(shouldTap && gone) else { return .invalid("`tap` y `gone` no van juntos.") }
+        guard !(shouldTap && gone) else { return .invalid("`tap` and `gone` don't go together.") }
         let seconds = min(max(Self.double(arguments["timeout"]) ?? 30, 1), 120)
         if let failure = await ensureConnected() { return failure }
 
@@ -591,32 +591,32 @@ final class Session {
             await inspector.readScreen()
             if let failure = inspector.failure { return .error(failure) }
             if !inspector.vanishedApps.isEmpty {
-                return .error(ToolError.appVanished("La app dejó de correr mientras esperaba «\(query)»."), appending: outline())
+                return .error(ToolError.appVanished("The app stopped running while waiting for «\(query)»."), appending: outline())
             }
             let match = Self.match(query, in: inspector.elements, toTap: shouldTap)
             let waited = (ContinuousClock.now - start).components
             let elapsed = String(format: "%.1f", Double(waited.seconds) + Double(waited.attoseconds) / 1e18)
 
             if gone, match == nil {
-                return .text("«\(query)» ya no está (\(elapsed) s).\n\n\(outline())")
+                return .text("«\(query)» is gone (\(elapsed) s).\n\n\(outline())")
             }
             if !gone, let match {
-                guard shouldTap else { return .text("Apareció «\(query)» (\(elapsed) s).\n\n\(outline())") }
+                guard shouldTap else { return .text("«\(query)» appeared (\(elapsed) s).\n\n\(outline())") }
                 await inspector.perform(match.tapAction)
                 if let failure = inspector.failure { return .error(failure) }
-                return .text("Apareció «\(query)» (\(elapsed) s) y lo toqué: \(match.type) \"\(Self.clipped(match.caption))\".\n\n\(outline())")
+                return .text("«\(query)» appeared (\(elapsed) s) and I tapped it: \(match.type) \"\(Self.clipped(match.caption))\".\n\n\(outline())")
             }
             guard ContinuousClock.now < deadline else {
-                let what = gone ? "«\(query)» sigue en pantalla" : "No apareció «\(query)»"
-                return .error(ToolError.timedOut("\(what) después de \(Int(seconds)) s."), appending: outline())
+                let what = gone ? "«\(query)» is still on screen" : "«\(query)» did not appear"
+                return .error(ToolError.timedOut("\(what) after \(Int(seconds)) s."), appending: outline())
             }
             try? await Task.sleep(for: .milliseconds(250))
         }
     }
 
-    /// Exacto antes que parcial y, a igualdad, un botón antes que un texto. Para
-    /// tocar, un texto que solo *contiene* la palabra no cuenta: «Aprobar» suele
-    /// estar también en el cuerpo del mensaje, que existe antes que la card.
+    /// Exact before partial and, when tied, a button before a text. To tap, a text
+    /// that only *contains* the word doesn't count: «Approve» is often in the message
+    /// body too, which exists before the card.
     private static func match(_ query: String, in elements: [UIElement], toTap: Bool = false) -> UIElement? {
         let options: String.CompareOptions = [.caseInsensitive, .diacriticInsensitive]
         func fields(_ e: UIElement) -> [String] { [e.label, e.text, e.identifier].compactMap { $0 } }
@@ -629,30 +629,30 @@ final class Session {
         return hits.min { rank($0) < rank($1) }
     }
 
-    /// El mismo formato que el outline de sim-use, que es lo que mejor se lee.
+    /// The same format as sim-use's outline, which is what reads best.
     private func outline(full: Bool = false, skeleton: Bool = false) -> String {
         let size = inspector.screenSize
-        var lines = ["App: \(inspector.appLabel ?? "?") (\(inspector.appPackage ?? "?"))  \(Int(size.width))x\(Int(size.height))  · lectura \(inspector.reading)"]
+        var lines = ["App: \(inspector.appLabel ?? "?") (\(inspector.appPackage ?? "?"))  \(Int(size.width))x\(Int(size.height))  · reading \(inspector.reading)"]
         if !inspector.vanishedApps.isEmpty {
-            lines.append("⚠ Dejaron de correr desde la lectura anterior (¿crash?): \(inspector.vanishedApps.joined(separator: ", "))")
+            lines.append("⚠ Stopped running since the previous reading (crash?): \(inspector.vanishedApps.joined(separator: ", "))")
         }
         if let focus = focusRegion, !inspector.regions.contains(focus) { focusRegion = nil }
         for region in inspector.regions {
             let members = inspector.elements(in: region)
             if skeleton || (focusRegion != nil && region != focusRegion) {
-                lines.append("[\(region)] \(members.count) elementos")
+                lines.append("[\(region)] \(members.count) elements")
             } else {
                 lines.append("[\(region)]")
                 lines += members.map { line($0, full: full) }
             }
         }
-        if inspector.elements.isEmpty { lines.append("(sin elementos)") }
+        if inspector.elements.isEmpty { lines.append("(no elements)") }
         if skeleton {
-            lines.append("Para ver una región: `read_screen` con `region`.")
+            lines.append("To see a region: `read_screen` with `region`.")
         } else if let focus = focusRegion {
-            lines.append("Mostrando solo «\(focus)»; `read_screen` sin `region` vuelve a la pantalla entera.")
+            lines.append("Showing only «\(focus)»; `read_screen` without `region` goes back to the whole screen.")
         } else if inspector.elements.count > Self.denseThreshold {
-            lines.append("Pantalla densa (\(inspector.elements.count) elementos): `read_screen` con `skeleton: true` y después `region` cuesta menos.")
+            lines.append("Dense screen (\(inspector.elements.count) elements): `read_screen` with `skeleton: true` and then `region` costs less.")
         }
         return lines.joined(separator: "\n")
     }
@@ -670,48 +670,48 @@ final class Session {
         return "  " + parts.joined(separator: "  ")
     }
 
-    /// Una línea y hasta 100 caracteres. Cada acción devuelve la pantalla entera,
-    /// y la respuesta de un chat puede ser una página: cortada se reconoce igual,
-    /// y `read_screen` con `full` la trae completa cuando hay que leerla.
+    /// One line and up to 100 characters. Every action returns the whole screen, and
+    /// a chat reply can be a page long: cut, it is still recognisable, and
+    /// `read_screen` with `full` returns it whole when it has to be read.
     private static func clipped(_ text: String, limit: Int = 100) -> String {
         let flat = text.split(whereSeparator: \.isNewline).joined(separator: " ⏎ ")
         guard flat.count > limit else { return flat }
-        return "\(flat.prefix(limit))… (\(text.count) caracteres)"
+        return "\(flat.prefix(limit))… (\(text.count) characters)"
     }
 
     // MARK: - Windows
 
     private func listWindows() async -> ToolResult {
         if let failure = await ensureConnected() { return failure }
-        guard case .mac(let app)? = target else { return .invalid("`list_windows` es para apps de macOS: el simulador tiene una sola pantalla.") }
+        guard case .mac(let app)? = target else { return .invalid("`list_windows` is for macOS apps: the simulator has a single screen.") }
         let windows: [WindowInfo]
         do {
             windows = try await inspector.listWindows()
         } catch {
             return .error(fingertipError(error))
         }
-        guard !windows.isEmpty else { return .text("\(app.name) no tiene ventanas.") }
-        var lines = ["Ventanas de \(app.name) (\(app.bundleID)):"]
+        guard !windows.isEmpty else { return .text("\(app.name) has no windows.") }
+        var lines = ["Windows of \(app.name) (\(app.bundleID)):"]
         lines += windows.map { window in
             let f = window.frame
             var parts = ["  \(window.caption)", "(\(Int(f.minX)),\(Int(f.minY)) \(Int(f.width))x\(Int(f.height)))"]
-            if window.isFocused { parts.append("[en foco]") }
-            if window.isChosen { parts.append("[elegida]") }
-            if window.isMinimized { parts.append("[minimizada]") }
-            if window.isOnOtherSpace { parts.append("[en otro escritorio]") }
+            if window.isFocused { parts.append("[focused]") }
+            if window.isChosen { parts.append("[chosen]") }
+            if window.isMinimized { parts.append("[minimized]") }
+            if window.isOnOtherSpace { parts.append("[on another desktop]") }
             return parts.joined(separator: "  ")
         }
-        lines.append("Elegí una con `read_screen` y `window: <número>`.")
+        lines.append("Choose one with `read_screen` and `window: <number>`.")
         return .text(lines.joined(separator: "\n"))
     }
 
     private func bringToFront(_ arguments: [String: Any]) async -> ToolResult {
         guard FingertipSettings.load().bringToFrontEnabled else { return .error(ToolError.bringToFrontDisabled) }
         if let failure = await ensureConnected() { return failure }
-        guard case .mac? = target else { return .invalid("`bring_to_front` es para apps de macOS: el simulador tiene una sola pantalla.") }
+        guard case .mac? = target else { return .invalid("`bring_to_front` is for macOS apps: the simulator has a single screen.") }
         var window: Int?
         if let raw = arguments["window"] {
-            guard let number = Self.int(raw) else { return .invalid("`window` es el número de `list_windows`.") }
+            guard let number = Self.int(raw) else { return .invalid("`window` is the number from `list_windows`.") }
             window = number
         }
         await inspector.bringToFront(window: window)
@@ -720,39 +720,39 @@ final class Session {
         return .text(outline())
     }
 
-    // MARK: - Acciones
+    // MARK: - Actions
 
     private func tap(_ arguments: [String: Any]) async -> ToolResult {
         if let raw = arguments["alias"] {
             guard let (reading, alias) = Self.alias(raw) else {
-                return .invalid("`alias` va completo, como aparece en la lectura: `12:5` es el elemento 5 de la lectura 12.")
+                return .invalid("`alias` goes in full, as it appears in the reading: `12:5` is element 5 of reading 12.")
             }
             if let failure = await ensureConnected() { return failure }
             await inspector.tap(alias: alias, seenIn: reading)
-            return finished("Tocar @\(reading):\(alias)")
+            return finished("Tap @\(reading):\(alias)")
         }
         guard let x = Self.double(arguments["x"]), let y = Self.double(arguments["y"]) else {
-            return .invalid("Pasá `alias`, o `x` e `y`.")
+            return .invalid("Pass `alias`, or `x` and `y`.")
         }
         return await perform(.tap(alias: nil, point: CGPoint(x: x, y: y)))
     }
 
     private func select(_ arguments: [String: Any]) async -> ToolResult {
-        guard let option = arguments["option"] as? String, !option.isEmpty else { return .invalid("Falta `option`.") }
-        return await act(arguments, caption: "Elegir «\(option)»") { element in
+        guard let option = arguments["option"] as? String, !option.isEmpty else { return .invalid("Missing `option`.") }
+        return await act(arguments, caption: "Choose «\(option)»") { element in
             element.alias.map { .select(alias: $0, option: option) }
         }
     }
 
     private func setValue(_ arguments: [String: Any]) async -> ToolResult {
-        guard let value = arguments["value"] as? String else { return .invalid("Falta `value`.") }
-        return await act(arguments, caption: "Cambiar el valor") { element in
+        guard let value = arguments["value"] as? String else { return .invalid("Missing `value`.") }
+        return await act(arguments, caption: "Set the value") { element in
             element.alias.map { .setValue(alias: $0, value: value) }
         }
     }
 
     private func toggle(_ arguments: [String: Any]) async -> ToolResult {
-        await act(arguments, caption: "Alternar") { element in
+        await act(arguments, caption: "Toggle") { element in
             element.alias.map { .toggle(alias: $0) }
         }
     }
@@ -760,26 +760,26 @@ final class Session {
     /// An action on `@reading:alias`, checked against that reading like `tap`.
     private func act(_ arguments: [String: Any], caption: String, _ build: @escaping (UIElement) -> DeviceAction?) async -> ToolResult {
         guard let (reading, alias) = Self.alias(arguments["alias"]) else {
-            return .invalid("`alias` va completo, como aparece en la lectura: `12:5` es el elemento 5 de la lectura 12.")
+            return .invalid("`alias` goes in full, as it appears in the reading: `12:5` is element 5 of reading 12.")
         }
         if let failure = await ensureConnected() { return failure }
         await inspector.act(onAlias: alias, seenIn: reading, build)
-        return finished("\(caption) en @\(reading):\(alias)")
+        return finished("\(caption) on @\(reading):\(alias)")
     }
 
     private func typeText(_ arguments: [String: Any]) async -> ToolResult {
-        guard let text = arguments["text"] as? String, !text.isEmpty else { return .invalid("Falta `text`.") }
+        guard let text = arguments["text"] as? String, !text.isEmpty else { return .invalid("Missing `text`.") }
         return await perform(.inputText(text))
     }
 
     private func eraseText(_ arguments: [String: Any]) async -> ToolResult {
-        guard let count = Self.int(arguments["count"]), count > 0 else { return .invalid("`count` tiene que ser mayor que 0.") }
+        guard let count = Self.int(arguments["count"]), count > 0 else { return .invalid("`count` must be greater than 0.") }
         return await perform(.eraseText(characters: count))
     }
 
     private func scroll(_ arguments: [String: Any]) async -> ToolResult {
         guard let direction = (arguments["direction"] as? String).flatMap(ScrollDirection.init(rawValue:)) else {
-            return .invalid("`direction` es `down` o `up`.")
+            return .invalid("`direction` is `down` or `up`.")
         }
         if let failure = await ensureConnected() { return failure }
         return await perform(.scroll(direction, screen: inspector.screenSize))
@@ -787,16 +787,16 @@ final class Session {
 
     private func swipe(_ arguments: [String: Any]) async -> ToolResult {
         let values = ["from_x", "from_y", "to_x", "to_y"].compactMap { Self.double(arguments[$0]) }
-        guard values.count == 4 else { return .invalid("Faltan coordenadas.") }
+        guard values.count == 4 else { return .invalid("Missing coordinates.") }
         return await perform(.swipe(from: CGPoint(x: values[0], y: values[1]), to: CGPoint(x: values[2], y: values[3])))
     }
 
     private func pressButton(_ arguments: [String: Any]) async -> ToolResult {
-        guard let button = arguments["button"] as? String else { return .invalid("Falta `button`.") }
+        guard let button = arguments["button"] as? String else { return .invalid("Missing `button`.") }
         return await perform(.pressButton(button))
     }
 
-    /// `ScreenInspector.perform` espera a que la pantalla se asiente y la relee.
+    /// `ScreenInspector.perform` waits for the screen to settle and re-reads it.
     private func perform(_ action: DeviceAction) async -> ToolResult {
         if let failure = await ensureConnected() { return failure }
         await inspector.perform(action)
@@ -811,15 +811,15 @@ final class Session {
             return .error(failure, appending: failure.retrySafe ? outline() : nil)
         }
         let steps = inspector.lastDelivery
-        guard !steps.isEmpty else { return .text("\(caption) → listo.\n\n\(outline())") }
+        guard !steps.isEmpty else { return .text("\(caption) → done.\n\n\(outline())") }
         // Text only: Claude Code shows `structuredContent` instead of the text when both come,
         // and the reply would lose the screen.
-        return .text("\(caption) → listo.\nEntrega: \(steps.map(\.caption).joined(separator: " → "))\n\n\(outline())")
+        return .text("\(caption) → done.\nDelivery: \(steps.map(\.caption).joined(separator: " → "))\n\n\(outline())")
     }
 
     private func screenshot() async -> ToolResult {
         if let failure = await ensureConnected() { return failure }
-        guard let driver = inspector.driver else { return .error(ToolError.notConnected("No hay dispositivo conectado.")) }
+        guard let driver = inspector.driver else { return .error(ToolError.notConnected("No device connected.")) }
         let png: Data
         do {
             png = try await driver.screenshot()
@@ -834,13 +834,13 @@ final class Session {
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try png.write(to: file, options: .withoutOverwriting)
-            saved = "PNG completo: \(file.path)"
+            saved = "Full PNG: \(file.path)"
         } catch {
-            saved = "No pude guardar el PNG en \(directory.path): \(error.localizedDescription)"
+            saved = "Couldn't save the PNG in \(directory.path): \(error.localizedDescription)"
         }
 
         guard let jpeg = Self.reduced(png, maxSide: Self.inlineImageSide) else {
-            return .text("No pude reducir la captura. \(saved)")
+            return .text("Couldn't reduce the screenshot. \(saved)")
         }
         return ToolResult(content: [
             ["type": "image", "data": jpeg.base64EncodedString(), "mimeType": "image/jpeg"],
@@ -851,29 +851,29 @@ final class Session {
     // MARK: - Recording
 
     private func startRecording() async -> ToolResult {
-        if let test { return .error(ToolError.testInProgress("La prueba «\(test.name)» ya se está grabando entera en \(test.recording.path); el video se cierra con `end_test`.")) }
+        if let test { return .error(ToolError.testInProgress("Test «\(test.name)» is already being recorded whole to \(test.recording.path); its video is closed with `end_test`.")) }
         if let failure = await ensureConnected() { return failure }
-        guard let driver = inspector.driver else { return .error(ToolError.notConnected("No hay dispositivo conectado.")) }
+        guard let driver = inspector.driver else { return .error(ToolError.notConnected("No device connected.")) }
         // The folder chosen in the Fingertip app, read per call like the screenshots one.
         let directory = FingertipSettings.load().effectiveRecordingsDirectory
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let file = Self.recordingFile(in: directory)
             try await driver.startRecording(to: file)
-            return .text("Grabando → \(file.path)\nTermínala con `stop_recording`.")
+            return .text("Recording → \(file.path)\nEnd it with `stop_recording`.")
         } catch {
             return .error(fingertipError(error))
         }
     }
 
     private func stopRecording() async -> ToolResult {
-        if let test { return .error(ToolError.testInProgress("El video de la prueba «\(test.name)» se cierra con `end_test`, no con `stop_recording`.")) }
+        if let test { return .error(ToolError.testInProgress("The video of test «\(test.name)» is closed with `end_test`, not `stop_recording`.")) }
         // No `ensureConnected`: stopping must not connect to anything.
         guard let driver = inspector.driver else { return .error(RecordingError.notRecording) }
         do {
             let file = try await driver.stopRecording()
             let size = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int) ?? 0
-            return .text("Grabación guardada: \(file.path) (\(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)))")
+            return .text("Recording saved: \(file.path) (\(ByteCountFormatter.string(fromByteCount: Int64(size), countStyle: .file)))")
         } catch {
             return .error(fingertipError(error))
         }
@@ -927,20 +927,20 @@ final class Session {
         return output as Data
     }
 
-    // MARK: - Ciclo de vida
+    // MARK: - Lifecycle
 
     private func relaunchApp(_ arguments: [String: Any]) async -> ToolResult {
-        guard let bundleID = arguments["bundle_id"] as? String, !bundleID.isEmpty else { return .invalid("Falta `bundle_id`.") }
+        guard let bundleID = arguments["bundle_id"] as? String, !bundleID.isEmpty else { return .invalid("Missing `bundle_id`.") }
         if Self.isBlocked(bundleID) { return Self.blockedError(bundleID) }
         if let failure = await ensureConnected() { return failure }
         guard await inspector.relaunch(bundleID) else {
-            return .error(inspector.failure ?? UnexpectedError(message: "No pude relanzar \(bundleID)."))
+            return .error(inspector.failure ?? UnexpectedError(message: "Couldn't relaunch \(bundleID)."))
         }
-        return .text("\(bundleID) relanzada.\n\n\(outline())")
+        return .text("\(bundleID) relaunched.\n\n\(outline())")
     }
 
     private func terminateApp(_ arguments: [String: Any]) async -> ToolResult {
-        guard let bundleID = arguments["bundle_id"] as? String, !bundleID.isEmpty else { return .invalid("Falta `bundle_id`.") }
+        guard let bundleID = arguments["bundle_id"] as? String, !bundleID.isEmpty else { return .invalid("Missing `bundle_id`.") }
         if Self.isBlocked(bundleID) { return Self.blockedError(bundleID) }
         if let failure = await ensureConnected() { return failure }
         do {
@@ -948,21 +948,21 @@ final class Session {
         } catch {
             return .error(fingertipError(error))
         }
-        return .text("\(bundleID) cerrada.")
+        return .text("\(bundleID) quit.")
     }
 
     // MARK: - Jev
 
     private func runInstruction(_ arguments: [String: Any]) async -> ToolResult {
         guard let instruction = arguments["instruction"] as? String, !instruction.isEmpty else {
-            return .invalid("Falta `instruction`.")
+            return .invalid("Missing `instruction`.")
         }
         let bundleID = arguments["bundle_id"] as? String ?? ""
         if Self.isBlocked(bundleID) { return Self.blockedError(bundleID) }
         if let failure = await ensureConnected() { return failure }
         agent.instruction = instruction
         agent.bundleID = bundleID
-        guard agent.canStep else { return .error(inspector.failure ?? ToolError.notConnected("El dispositivo no está listo.")) }
+        guard agent.canStep else { return .error(inspector.failure ?? ToolError.notConnected("The device is not ready.")) }
         await agent.run()
 
         let result = switch agent.outcome {
@@ -970,19 +970,19 @@ final class Session {
         case .needsUser: "needs_user"
         case .acted, .screenChanged, .none: agent.failure == nil ? "stopped" : "error"
         }
-        var lines = ["Resultado: \(result)"]
+        var lines = ["Result: \(result)"]
         if let failure = agent.failure {
             lines.append("Error \(failure.code) · retry_safe: \(failure.retrySafe)\n\(failure.errorDescription ?? "")")
         }
-        lines.append("Pasos:")
+        lines.append("Steps:")
         lines += agent.history.isEmpty ? ["  (ninguno)"] : agent.history.enumerated().map { "  \($0.offset + 1). \($0.element)" }
         if let decision = agent.decision {
-            lines.append(String(format: "Última decisión: confianza %.2f, instrucción cumplida %.2f", decision.confidence, decision.goalReached))
+            lines.append(String(format: "Last decision: confidence %.2f, instruction done %.2f", decision.confidence, decision.goalReached))
             if agent.heldForRisk, let risk = decision.risk {
-                lines.append(String(format: "Frené: el paso parece destructivo (riesgo %.2f) y la confianza %.2f no llega a %.2f. Confirmá vos antes de tocarlo.", risk, decision.confidence, JevAgent.destructiveConfidence))
+                lines.append(String(format: "Stopped: the step looks destructive (risk %.2f) and the confidence %.2f is below %.2f. Confirm it yourself before tapping.", risk, decision.confidence, JevAgent.destructiveConfidence))
             }
             if case .needsUser = agent.outcome {
-                lines.append("Opciones que barajó Jev:")
+                lines.append("Options Jev weighed:")
                 lines += decision.ranked.prefix(5).map { option in
                     let caption = option.element.map { "@\($0.alias.map(String.init) ?? "-") \($0.type) \"\($0.caption)\"" } ?? "(ninguno / scroll)"
                     return String(format: "  %.2f  %@", option.probability, caption)
@@ -1006,11 +1006,11 @@ final class Session {
         return ToolResult(content: [["type": "text", "text": text]], isError: true, structured: structured, outcome: result)
     }
 
-    // MARK: - Utilidades
+    // MARK: - Utilities
 
     private static func describe(_ target: Target) -> String {
         switch target {
-        case .simulator(let udid): "simulador \(udid)"
+        case .simulator(let udid): "simulator \(udid)"
         case .mac(let app): "\(app.name) (\(app.bundleID), \(app.bundleURL.path))"
         }
     }
@@ -1027,7 +1027,7 @@ final class Session {
         return (reading, alias)
     }
 
-    /// JSONSerialization da NSNumber: un entero puede llegar como 3 o 3.0.
+    /// JSONSerialization yields NSNumber: an integer may arrive as 3 or 3.0.
     private static func int(_ value: Any?) -> Int? {
         (value as? NSNumber)?.intValue ?? (value as? String).flatMap(Int.init)
     }

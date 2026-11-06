@@ -56,32 +56,32 @@ struct OnboardingView: View {
     // MARK: - Steps
 
     private var welcome: some View {
-        StepPage(symbol: "hand.tap", title: "Bienvenido a Fingertip") {
-            Text("Fingertip deja que Claude Code vea y maneje un simulador de iOS o una app de macOS: lee la pantalla, toca, escribe y scrollea.")
-            Text("En los próximos pasos verificamos que esté todo listo para usarlo.")
+        StepPage(symbol: "hand.tap", title: "Welcome to Fingertip") {
+            Text("Fingertip lets Claude Code see and drive an iOS simulator or a macOS app: it reads the screen, taps, types and scrolls.")
+            Text("The next steps check that everything is ready to use it.")
                 .foregroundStyle(.secondary)
         }
     }
 
     private var simulator: some View {
-        StepPage(symbol: "iphone", title: "Simulador de iOS") {
-            Toggle("Voy a probar apps en el simulador de iOS", isOn: $usesSimulator)
+        StepPage(symbol: "iphone", title: "iOS Simulator") {
+            Toggle("I’ll test apps in the iOS simulator", isOn: $usesSimulator)
                 .toggleStyle(.switch)
 
             if usesSimulator {
-                CheckRow(title: "Xcode y runtimes de iOS", check: runtimes, running: runtimes == nil)
+                CheckRow(title: "Xcode and iOS runtimes", check: runtimes, running: runtimes == nil)
                 CheckRow(title: "sim-use", check: simUse, running: simUse == nil || installingSimUse) {
                     if simUse?.passed == false {
-                        Button("Instalar sim-use") { installSimUse() }
+                        Button("Install sim-use") { installSimUse() }
                             .disabled(installingSimUse)
                     }
                 }
-                Text("sim-use lee la pantalla del simulador y le manda los toques. Se instala con Homebrew: `\(SetupService.simUseInstallCommand)`")
+                Text("sim-use reads the simulator’s screen and sends it the taps. It installs with Homebrew: `\(SetupService.simUseInstallCommand)`")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
             } else {
-                Text("Solo vas a usar apps de macOS: no hace falta nada de esto. Podés volver a este paso desde el menú.")
+                Text("You’ll only use macOS apps, so none of this is needed. You can come back to this step from the menu.")
                     .foregroundStyle(.secondary)
             }
         }
@@ -94,13 +94,13 @@ struct OnboardingView: View {
     }
 
     private var jev: some View {
-        StepPage(symbol: "sparkles", title: "Jev (opcional)") {
-            Text("Normalmente Claude decide cada toque. Con `run_instruction`, Claude le delega una instrucción entera a Jev, que elige los pasos por su cuenta: menos idas y vueltas, pero necesita una clave de API de TypeSafe.")
-            Text("Sin clave, todas las demás tools funcionan igual. Si no tenés una, seguí de largo; podés cargarla después en Ajustes → Jev.")
+        StepPage(symbol: "sparkles", title: "Jev (optional)") {
+            Text("Normally Claude decides every tap. With `run_instruction`, Claude hands a whole instruction to Jev, which picks the steps on its own: fewer round trips, but it needs a TypeSafe API key.")
+            Text("Without a key, every other tool works the same. If you don’t have one, skip this step; you can add it later in Settings → Jev.")
                 .foregroundStyle(.secondary)
-            SecureField("TYPESAFE_API_KEY", text: $apiKey, prompt: Text("Pegá tu clave"))
+            SecureField("TYPESAFE_API_KEY", text: $apiKey, prompt: Text("Paste your key"))
                 .textFieldStyle(.roundedBorder)
-            Text("Se guarda en el Llavero y se le pasa a Claude Code al registrar el MCP en el paso siguiente.")
+            Text("It is stored in the Keychain and passed to Claude Code when the MCP is registered in the next step.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
@@ -112,14 +112,14 @@ struct OnboardingView: View {
 
     private var claude: some View {
         StepPage(symbol: "terminal", title: "Claude Code") {
-            Text("Fingertip se usa desde Claude Code como un servidor MCP. Esta app trae el servidor adentro y lo registra para todos tus proyectos.")
-            CheckRow(title: "Registro en Claude Code", check: registration, running: registration == nil || registering) {
+            Text("Fingertip is used from Claude Code as an MCP server. This app ships the server inside and registers it for all your projects.")
+            CheckRow(title: "Registration in Claude Code", check: registration, running: registration == nil || registering) {
                 if registration != nil {
-                    Button(registration?.passed == true ? "Volver a registrar" : "Registrar") { register() }
+                    Button(registration?.passed == true ? "Register Again" : "Register") { register() }
                         .disabled(registering)
                 }
             }
-            Text("Después de registrarlo, reconectá en Claude Code con `/mcp`.")
+            Text("After registering it, reconnect in Claude Code with `/mcp`.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
@@ -131,28 +131,28 @@ struct OnboardingView: View {
     }
 
     private var mac: some View {
-        StepPage(symbol: "macwindow", title: "Apps de macOS") {
-            Text("Para manejar apps de macOS hacen falta dos permisos. macOS no se los da a Fingertip sino a la app desde la que corrés Claude Code: tu terminal o Claude.")
+        StepPage(symbol: "macwindow", title: "macOS Apps") {
+            Text("Driving macOS apps needs two permissions. macOS grants them not to Fingertip but to the app you run Claude Code from: your terminal or Claude.")
             PermissionRow(
-                title: "Accesibilidad",
-                detail: "Obligatorio: leer la pantalla y actuar.",
+                title: "Accessibility",
+                detail: "Required: reading the screen and acting on it.",
                 pane: "Privacy_Accessibility"
             )
             PermissionRow(
-                title: "Grabación de pantalla",
-                detail: "Para screenshots y grabaciones.",
+                title: "Screen Recording",
+                detail: "For screenshots and recordings.",
                 pane: "Privacy_ScreenCapture"
             )
-            Text("Si falta alguno, la primera vez que fingertip se conecte a una app macOS lo va a pedir.")
+            Text("If one is missing, fingertip asks for it the first time it connects to a macOS app.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
         }
     }
 
     private var done: some View {
-        StepPage(symbol: "checkmark.seal", title: "Listo") {
-            Text("Fingertip vive en la barra de menú. Desde ahí abrís los ajustes o volvés a este asistente.")
-            Text("En Claude Code, probá: «leé la pantalla del simulador».")
+        StepPage(symbol: "checkmark.seal", title: "All Set") {
+            Text("Fingertip lives in the menu bar. From there you open the settings or come back to this assistant.")
+            Text("In Claude Code, try: “read the simulator’s screen”.")
                 .foregroundStyle(.secondary)
         }
     }
@@ -162,14 +162,14 @@ struct OnboardingView: View {
     private var footer: some View {
         HStack {
             if step != .welcome {
-                Button("Atrás") { move(by: -1) }
+                Button("Back") { move(by: -1) }
             }
             Spacer()
             if step == .done {
-                Button("Empezar") { finish() }
+                Button("Get Started") { finish() }
                     .keyboardShortcut(.defaultAction)
             } else {
-                Button("Continuar") { move(by: 1) }
+                Button("Continue") { move(by: 1) }
                     .keyboardShortcut(.defaultAction)
             }
         }
@@ -213,7 +213,7 @@ struct OnboardingView: View {
 
 private struct StepPage<Content: View>: View {
     let symbol: String
-    let title: String
+    let title: LocalizedStringKey
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -241,12 +241,12 @@ private struct StepDots: View {
 }
 
 private struct CheckRow<Action: View>: View {
-    let title: String
+    let title: LocalizedStringKey
     let check: SetupService.Check?
     let running: Bool
     @ViewBuilder var action: Action
 
-    init(title: String, check: SetupService.Check?, running: Bool, @ViewBuilder action: () -> Action = { EmptyView() }) {
+    init(title: LocalizedStringKey, check: SetupService.Check?, running: Bool, @ViewBuilder action: () -> Action = { EmptyView() }) {
         self.title = title
         self.check = check
         self.running = running
@@ -285,8 +285,8 @@ private struct CheckRow<Action: View>: View {
 }
 
 private struct PermissionRow: View {
-    let title: String
-    let detail: String
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
     let pane: String
 
     var body: some View {
@@ -296,7 +296,7 @@ private struct PermissionRow: View {
                 Text(detail).font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
-            Button("Abrir Ajustes") {
+            Button("Open System Settings") {
                 if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") {
                     NSWorkspace.shared.open(url)
                 }

@@ -1,0 +1,1410 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "%@ isn’t in the test’s folder.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ no está en la carpeta de la prueba."
+          }
+        }
+      }
+    },
+    "%@: %@": {
+      "shouldTranslate": false
+    },
+    "%lld": {
+      "shouldTranslate": false
+    },
+    "%lld ms": {
+      "shouldTranslate": false
+    },
+    "API Key": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clave de API"
+          }
+        }
+      }
+    },
+    "Accessibility": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesibilidad"
+          }
+        }
+      }
+    },
+    "Add App…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agregar app…"
+          }
+        }
+      }
+    },
+    "Added by You": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agregadas por vos"
+          }
+        }
+      }
+    },
+    "After registering it, reconnect in Claude Code with `/mcp`.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Después de registrarlo, reconectá en Claude Code con `/mcp`."
+          }
+        }
+      }
+    },
+    "All Set": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo"
+          }
+        }
+      }
+    },
+    "Allow %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitir %@"
+          }
+        }
+      }
+    },
+    "Allow bringing windows to the front": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitir traer ventanas al frente"
+          }
+        }
+      }
+    },
+    "Back": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atrás"
+          }
+        }
+      }
+    },
+    "Blocked Apps": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apps bloqueadas"
+          }
+        }
+      }
+    },
+    "Cancel": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        }
+      }
+    },
+    "Captures": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capturas"
+          }
+        }
+      }
+    },
+    "Check Now": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar ahora"
+          }
+        }
+      }
+    },
+    "Check for Updates…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar actualizaciones…"
+          }
+        }
+      }
+    },
+    "Check for updates automatically": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buscar actualizaciones automáticamente"
+          }
+        }
+      }
+    },
+    "Choose a step to see its screen and result.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegí un paso para ver su pantalla y su resultado."
+          }
+        }
+      }
+    },
+    "Choose a test from the list to see its video and steps.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegí una prueba de la lista para ver su video y sus pasos."
+          }
+        }
+      }
+    },
+    "Choose an app to block it like the ones above. Blocking takes effect on the next connection to that app, without reconnecting the MCP; removing it from the list, like allowing, needs `/mcp`.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegí una app para bloquearla igual que las de arriba. Bloquear vale desde la próxima conexión a esa app, sin reconectar el MCP; quitarla de la lista, como permitir, pide `/mcp`."
+          }
+        }
+      }
+    },
+    "Choose…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir…"
+          }
+        }
+      }
+    },
+    "Claude Code": {
+      "shouldTranslate": false
+    },
+    "Claude will be able to connect to and type into every blocked app: Terminal, iTerm and other terminals; VS Code, Cursor, Zed, JetBrains and other editors with a terminal; the Claude, Codex and ChatGPT apps; Script Editor, Automator, Shortcuts, Raycast and Alfred; this app itself; System Settings; Keychain Access, Passwords, 1Password and other password managers; and the apps you added.\n\nWhat this means:\n• Everything fingertip reads from the screen reaches Claude as text. An instruction hidden in a web page, an email or a document can lead it to open a terminal and run a command with your permissions: delete files, upload your data, install something.\n• Passwords, tokens and keys visible on screen end up in the conversation.\n• It can change privacy and security permissions in System Settings.\n• It can give orders to other agents, which act with their own permissions.\n• It applies to all your projects and Claude Code sessions, not just the current task, until you turn it off.\n\nIf you only need one app, it is safer to unblock just that one on this list.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude va a poder conectarse y escribir en todas las apps bloqueadas: Terminal, iTerm y otras terminales; VS Code, Cursor, Zed, JetBrains y otros editores con terminal; las apps de Claude, Codex y ChatGPT; Script Editor, Automator, Atajos, Raycast y Alfred; esta misma app; Ajustes del Sistema; Acceso a Llaveros, Contraseñas, 1Password y otros gestores; y las que agregaste vos.\n\nQué implica:\n• Todo lo que fingertip lee de la pantalla le llega a Claude como texto. Una instrucción escondida en una web, un mail o un documento puede llevarlo a abrir una terminal y correr un comando con tus permisos: borrar archivos, subir tus datos, instalar algo.\n• Las contraseñas, tokens y claves que se vean en pantalla pasan a la conversación.\n• Puede cambiar permisos de privacidad y seguridad en Ajustes del Sistema.\n• Puede darle órdenes a otros agentes, que actúan con sus propios permisos.\n• Vale para todos tus proyectos y sesiones de Claude Code, no solo para la tarea de ahora, hasta que lo apagues.\n\nSi solo necesitás una app, es más seguro desbloquear esa sola en esta lista."
+          }
+        }
+      }
+    },
+    "Continue": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuar"
+          }
+        }
+      }
+    },
+    "Couldn’t read the bundle ID of %@.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude leer el bundle id de %@."
+          }
+        }
+      }
+    },
+    "Couldn’t save the settings: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No pude guardar los ajustes: %@"
+          }
+        }
+      }
+    },
+    "Done": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listo"
+          }
+        }
+      }
+    },
+    "Driving macOS apps needs two permissions. macOS grants them not to Fingertip but to the app you run Claude Code from: your terminal or Claude.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para manejar apps de macOS hacen falta dos permisos. macOS no se los da a Fingertip sino a la app desde la que corrés Claude Code: tu terminal o Claude."
+          }
+        }
+      }
+    },
+    "Duration": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duración"
+          }
+        }
+      }
+    },
+    "Each `screenshot` saves the full PNG here. By default it is a temporary folder that macOS cleans up on its own.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada `screenshot` guarda acá el PNG completo. Por defecto es una carpeta temporal que macOS limpia sola."
+          }
+        }
+      }
+    },
+    "Each `start_recording` / `stop_recording` leaves a .mov here. By default it is a temporary folder that macOS cleans up on its own.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada `start_recording` / `stop_recording` deja acá un .mov. Por defecto es una carpeta temporal que macOS limpia sola."
+          }
+        }
+      }
+    },
+    "Each run saves a JSONL file with the steps and a folder with the screenshots.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cada run guarda un JSONL con los pasos y una carpeta con las capturas."
+          }
+        }
+      }
+    },
+    "Enables `bring_to_front`: it activates the app and, if the window is on another desktop, switches to that desktop. It changes what you are looking at. The MCP reads this on every use, so there is no need to reconnect.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Habilita `bring_to_front`: activa la app y, si la ventana está en otro escritorio, cambia a ese escritorio. Mueve lo que estás viendo. El MCP lo lee en cada uso: no hace falta reconectar."
+          }
+        }
+      }
+    },
+    "Ended": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fin"
+          }
+        }
+      }
+    },
+    "Failed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falló"
+          }
+        }
+      }
+    },
+    "Failed (%d): %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falló (%d): %@"
+          }
+        }
+      }
+    },
+    "Fingertip": {
+      "shouldTranslate": false
+    },
+    "Fingertip is used from Claude Code as an MCP server. This app ships the server inside and registers it for all your projects.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fingertip se usa desde Claude Code como un servidor MCP. Esta app trae el servidor adentro y lo registra para todos tus proyectos."
+          }
+        }
+      }
+    },
+    "Fingertip lets Claude Code see and drive an iOS simulator or a macOS app: it reads the screen, taps, types and scrolls.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fingertip deja que Claude Code vea y maneje un simulador de iOS o una app de macOS: lee la pantalla, toca, escribe y scrollea."
+          }
+        }
+      }
+    },
+    "Fingertip lives in the menu bar. From there you open the settings or come back to this assistant.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fingertip vive en la barra de menú. Desde ahí abrís los ajustes o volvés a este asistente."
+          }
+        }
+      }
+    },
+    "Folder": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carpeta"
+          }
+        }
+      }
+    },
+    "For screenshots and recordings.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para screenshots y grabaciones."
+          }
+        }
+      }
+    },
+    "General": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        }
+      }
+    },
+    "Get Started": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Empezar"
+          }
+        }
+      }
+    },
+    "God Mode": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modo dios"
+          }
+        }
+      }
+    },
+    "God mode: allow all apps": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modo dios: permitir todas las apps"
+          }
+        }
+      }
+    },
+    "Homebrew not found. Install it from brew.sh and run: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No encontré Homebrew. Instalalo desde brew.sh y corré: %@"
+          }
+        }
+      }
+    },
+    "If one is missing, fingertip asks for it the first time it connects to a macOS app.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si falta alguno, la primera vez que fingertip se conecte a una app macOS lo va a pedir."
+          }
+        }
+      }
+    },
+    "In Claude Code, try: “read the simulator’s screen”.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En Claude Code, probá: «leé la pantalla del simulador»."
+          }
+        }
+      }
+    },
+    "In progress": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En curso"
+          }
+        }
+      }
+    },
+    "Install / Update": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalar / actualizar"
+          }
+        }
+      }
+    },
+    "Install sim-use": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Instalar sim-use"
+          }
+        }
+      }
+    },
+    "It can’t be allowed on its own: these settings unblock everything else. Only god mode unblocks it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede permitir sola: desde estos ajustes se libera todo lo demás. Solo el modo dios la libera."
+          }
+        }
+      }
+    },
+    "It is stored in the Keychain and passed to Claude Code when the MCP is registered in the next step.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se guarda en el Llavero y se le pasa a Claude Code al registrar el MCP en el paso siguiente."
+          }
+        }
+      }
+    },
+    "Its settings hold these switches: only god mode unblocks it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sus ajustes tienen estos switches: solo el modo dios la libera."
+          }
+        }
+      }
+    },
+    "I’ll test apps in the iOS simulator": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voy a probar apps en el simulador de iOS"
+          }
+        }
+      }
+    },
+    "JetBrains IDEs (all)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "IDEs de JetBrains (todos)"
+          }
+        }
+      }
+    },
+    "Jev (optional)": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jev (opcional)"
+          }
+        }
+      }
+    },
+    "Jev Runs": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs de Jev"
+          }
+        }
+      }
+    },
+    "Jev Runs in Finder": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs de Jev en Finder"
+          }
+        }
+      }
+    },
+    "MCP Recordings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabaciones del MCP"
+          }
+        }
+      }
+    },
+    "MCP Screenshots": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screenshots del MCP"
+          }
+        }
+      }
+    },
+    "No Screen": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin pantalla"
+          }
+        }
+      }
+    },
+    "No Step Selected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ningún paso elegido"
+          }
+        }
+      }
+    },
+    "No Steps": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin pasos"
+          }
+        }
+      }
+    },
+    "No Test Selected": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ninguna prueba elegida"
+          }
+        }
+      }
+    },
+    "No Tests": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin pruebas"
+          }
+        }
+      }
+    },
+    "No Video": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin video"
+          }
+        }
+      }
+    },
+    "No verdict": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin veredicto"
+          }
+        }
+      }
+    },
+    "Normally Claude decides every tap. With `run_instruction`, Claude hands a whole instruction to Jev, which picks the steps on its own: fewer round trips, but it needs a TypeSafe API key.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normalmente Claude decide cada toque. Con `run_instruction`, Claude le delega una instrucción entera a Jev, que elige los pasos por su cuenta: menos idas y vueltas, pero necesita una clave de API de TypeSafe."
+          }
+        }
+      }
+    },
+    "Not installed.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No está instalado."
+          }
+        }
+      }
+    },
+    "On in every Claude Code session until you turn it off.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activo en todas las sesiones de Claude Code hasta que lo apagues."
+          }
+        }
+      }
+    },
+    "Open System Settings": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Ajustes"
+          }
+        }
+      }
+    },
+    "Overlay": {
+      "shouldTranslate": false
+    },
+    "Passed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pasó"
+          }
+        }
+      }
+    },
+    "Paste your key": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pegá tu clave"
+          }
+        }
+      }
+    },
+    "Pointer and status": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Puntero y estado"
+          }
+        }
+      }
+    },
+    "Quit Fingertip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salir de Fingertip"
+          }
+        }
+      }
+    },
+    "Recording error: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error de grabación: %@"
+          }
+        }
+      }
+    },
+    "Refresh": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizar"
+          }
+        }
+      }
+    },
+    "Register": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrar"
+          }
+        }
+      }
+    },
+    "Register Again": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a registrar"
+          }
+        }
+      }
+    },
+    "Registered with another server: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrado con otro servidor: %@"
+          }
+        }
+      }
+    },
+    "Registered with this app’s server.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrado con el servidor de esta app."
+          }
+        }
+      }
+    },
+    "Registered without the Jev key: register again to pass it along.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrado sin la clave de Jev: volvé a registrar para pasársela."
+          }
+        }
+      }
+    },
+    "Registered, but it points to a server that no longer exists: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrado, pero apunta a un servidor que ya no existe: %@"
+          }
+        }
+      }
+    },
+    "Registered: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrado: %@"
+          }
+        }
+      }
+    },
+    "Registering…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrando…"
+          }
+        }
+      }
+    },
+    "Registers fingertip in Claude Code for all your projects. Then reconnect with `/mcp`.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra fingertip en Claude Code para todos tus proyectos. Después reconectá con `/mcp`."
+          }
+        }
+      }
+    },
+    "Registration": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registro"
+          }
+        }
+      }
+    },
+    "Registration in Claude Code": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registro en Claude Code"
+          }
+        }
+      }
+    },
+    "Remove from the list": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar de la lista"
+          }
+        }
+      }
+    },
+    "Required: reading the screen and acting on it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obligatorio: leer la pantalla y actuar."
+          }
+        }
+      }
+    },
+    "Screen Missing": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falta la pantalla"
+          }
+        }
+      }
+    },
+    "Screen Recording": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grabación de pantalla"
+          }
+        }
+      }
+    },
+    "Security": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seguridad"
+          }
+        }
+      }
+    },
+    "Server": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servidor"
+          }
+        }
+      }
+    },
+    "Settings…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes…"
+          }
+        }
+      }
+    },
+    "Setup": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuración inicial"
+          }
+        }
+      }
+    },
+    "Setup…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configuración inicial…"
+          }
+        }
+      }
+    },
+    "Show in Finder": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar en Finder"
+          }
+        }
+      }
+    },
+    "Shown while this app is running": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se muestran mientras esta app esté abierta"
+          }
+        }
+      }
+    },
+    "Started": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicio"
+          }
+        }
+      }
+    },
+    "Step": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paso"
+          }
+        }
+      }
+    },
+    "TYPESAFE_API_KEY": {
+      "shouldTranslate": false
+    },
+    "Target": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Objetivo"
+          }
+        }
+      }
+    },
+    "Tests": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pruebas"
+          }
+        }
+      }
+    },
+    "Tests the MCP saves with connect(test:) appear here.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las pruebas que guarda el MCP con connect(test:) aparecen aquí."
+          }
+        }
+      }
+    },
+    "Tests…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pruebas…"
+          }
+        }
+      }
+    },
+    "The MCP doesn’t drive these apps: typing into them can run commands or expose secrets. Turn one on to allow it and reconnect with `/mcp`: the MCP reads the allowed apps only at launch, so an injected instruction can’t unblock them mid-session by editing the settings. Apps you don’t have installed don’t appear and stay blocked.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El MCP no maneja estas apps: escribir en ellas puede correr comandos o exponer secretos. Prendé una para permitirla y reconectá con `/mcp`: el MCP lee las permitidas solo al arrancar, para que una instrucción inyectada no pueda liberarlas a mitad de sesión editando los ajustes. Las que no tenés instaladas no aparecen y siguen bloqueadas."
+          }
+        }
+      }
+    },
+    "The next steps check that everything is ready to use it.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En los próximos pasos verificamos que esté todo listo para usarlo."
+          }
+        }
+      }
+    },
+    "The recording failed.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La grabación falló."
+          }
+        }
+      }
+    },
+    "Thinking…": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pensando…"
+          }
+        }
+      }
+    },
+    "This test has no recording.mov.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta prueba no tiene recording.mov."
+          }
+        }
+      }
+    },
+    "Turn On": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activar"
+          }
+        }
+      }
+    },
+    "Turn on god mode?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Activar el modo dios?"
+          }
+        }
+      }
+    },
+    "Unblocks every app on this list, Fingertip included. Changing it registers the server again; then reconnect with `/mcp`.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Libera todas las apps de esta lista, Fingertip incluida. Cambiarlo vuelve a registrar el servidor; después reconectá con `/mcp`."
+          }
+        }
+      }
+    },
+    "Unreadable test.json": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "test.json ilegible"
+          }
+        }
+      }
+    },
+    "Updates": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actualizaciones"
+          }
+        }
+      }
+    },
+    "Updating the app also updates the `fingertip-mcp` it ships with: reconnect with `/mcp`.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al actualizarse la app también se actualiza el `fingertip-mcp` que trae: reconectá con `/mcp`."
+          }
+        }
+      }
+    },
+    "Use Default": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usar la predeterminada"
+          }
+        }
+      }
+    },
+    "Used by `run_instruction`. It is stored in the Keychain and passed along when the MCP is registered: if you change it, install again from General.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La usa `run_instruction`. Se guarda en el Llavero y se pasa al registrar el MCP: si la cambiás, volvé a instalar desde General."
+          }
+        }
+      }
+    },
+    "Version %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versión %@"
+          }
+        }
+      }
+    },
+    "Video": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Video"
+          }
+        }
+      }
+    },
+    "View": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vista"
+          }
+        }
+      }
+    },
+    "Welcome to Fingertip": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bienvenido a Fingertip"
+          }
+        }
+      }
+    },
+    "Windows": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ventanas"
+          }
+        }
+      }
+    },
+    "Without a key, every other tool works the same. If you don’t have one, skip this step; you can add it later in Settings → Jev.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sin clave, todas las demás tools funcionan igual. Si no tenés una, seguí de largo; podés cargarla después en Ajustes → Jev."
+          }
+        }
+      }
+    },
+    "Xcode and iOS runtimes": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode y runtimes de iOS"
+          }
+        }
+      }
+    },
+    "Xcode has no iOS runtimes: add them in Xcode → Settings → Components.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xcode no tiene runtimes de iOS: agregalos en Xcode → Settings → Components."
+          }
+        }
+      }
+    },
+    "You’ll only use macOS apps, so none of this is needed. You can come back to this step from the menu.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Solo vas a usar apps de macOS: no hace falta nada de esto. Podés volver a este paso desde el menú."
+          }
+        }
+      }
+    },
+    "`brew %@` failed (%d): %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "`brew %1$@` falló (%2$d): %3$@"
+          }
+        }
+      }
+    },
+    "`claude` not found in the login shell’s PATH.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No encontré `claude` en el PATH del shell de login."
+          }
+        }
+      }
+    },
+    "`claude` not found. Install Claude Code and check again.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No encontré `claude`. Instalá Claude Code y volvé a verificar."
+          }
+        }
+      }
+    },
+    "`xcrun simctl` isn’t responding: install Xcode and open it once.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "`xcrun simctl` no responde: instalá Xcode y abrilo una vez."
+          }
+        }
+      }
+    },
+    "fingertip isn’t registered in Claude Code.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "fingertip no está registrado en Claude Code."
+          }
+        }
+      }
+    },
+    "iOS Simulator": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulador de iOS"
+          }
+        }
+      }
+    },
+    "macOS Apps": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apps de macOS"
+          }
+        }
+      }
+    },
+    "not finished": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sin terminar"
+          }
+        }
+      }
+    },
+    "sim-use": {
+      "shouldTranslate": false
+    },
+    "sim-use reads the simulator’s screen and sends it the taps. It installs with Homebrew: `%@`": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "sim-use lee la pantalla del simulador y le manda los toques. Se instala con Homebrew: `%@`"
+          }
+        }
+      }
+    },
+    "trace.jsonl is empty.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "trace.jsonl está vacío."
+          }
+        }
+      }
+    },
+    "trace.jsonl is missing.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Falta trace.jsonl."
+          }
+        }
+      }
+    },
+    "⚠︎ God mode on: blocked apps allowed": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "⚠︎ Modo dios activo: apps bloqueadas permitidas"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

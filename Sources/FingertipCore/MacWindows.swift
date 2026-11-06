@@ -62,7 +62,7 @@ extension MacDriver {
         if let chosen = chosenWindow {
             guard Self.processStart(app.processIdentifier) == chosen.processStart else {
                 if forgetGone { chosenWindow = nil }
-                throw MacDriverError.windowGone("la app se reinició")
+                throw MacDriverError.windowGone("the app restarted")
             }
             if let window = Self.reachable(chosen.number, windows: windows, root: root) { return window }
             // Still open, on a Space AX does not reach: the choice stands for when it comes back.
@@ -71,7 +71,7 @@ extension MacDriver {
                 throw MacDriverError.windowOnOtherSpace(elsewhere)
             }
             if forgetGone { chosenWindow = nil }
-            throw MacDriverError.windowGone("se cerró la #\(chosen.number)")
+            throw MacDriverError.windowGone("#\(chosen.number) closed")
         }
 
         let documents = windows.filter(Self.isOpenDocumentWindow)
