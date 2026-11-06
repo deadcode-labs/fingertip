@@ -24,7 +24,7 @@ _ = NSApplication.shared
 let session = Session()
 let server = MCPServer(
     name: "fingertip",
-    version: "0.6.0",
+    version: "0.7.0",
     instructions: """
     Manually test an iOS simulator or a macOS app: read the screen, tap, type, scroll and verify. \
     Typical flow: `list_targets` → `connect` → `relaunch_app` for a clean start → `read_screen` → actions \
