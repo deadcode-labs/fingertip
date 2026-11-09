@@ -11,6 +11,7 @@ struct FingertipApp: App {
     init() {
         Task { await OverlayBeaconServer.shared.start() }
         _ = AppUpdater.shared
+        _ = DiagnosticsReporter.shared
     }
 
     var body: some Scene {
