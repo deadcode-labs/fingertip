@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- The app subscribes to MetricKit and keeps each crash, hang and resource diagnostic macOS delivers as JSON in `~/Library/Application Support/Fingertip/diagnostics/`. macOS delivers them on a later launch, at most once a day; nothing is sent anywhere.
+- Crash reports through Sentry, for the app and the MCP, off until the user turns them on in Settings → General → Privacy. Only crashes are sent: no sessions, breadcrumbs, performance data or hangs, and `beforeSend` drops the host name, user, extra data and messages, keeps only the OS, device-model and app contexts without the locale or the per-Mac `device_app_hash`, and writes the home folder as `~` in paths. A crash is sent on the next launch of the process that hit it. The DSN in `CrashReporting.swift` is empty until a Sentry project exists; while it is, nothing starts.
 
 ### Fixed
 - The app no longer uses CPU while idle. Hidden, the edge indicator kept rendering its shader every frame (about 10% CPU, more the longer the app ran), and the toast kept animating its icon when it faded out on "Thinking…". The hidden windows now drop their SwiftUI content and get it back when they show again.

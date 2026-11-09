@@ -28,6 +28,9 @@ public nonisolated struct FingertipSettings: Codable, Equatable, Sendable {
     public var unblockedAppIDs: [String]?
     /// Bundle ids the user added to the block list, lowercased.
     public var extraBlockedAppIDs: [String]?
+    /// Whether the app and the MCP send crash reports to Sentry. Optional so an older
+    /// settings file decodes; `nil` is off.
+    public var sendsCrashReports: Bool?
 
     public nonisolated init(runsDirectory: URL? = nil, screenshotsDirectory: URL? = nil, recordingsDirectory: URL? = nil) {
         self.runsDirectory = runsDirectory
@@ -38,6 +41,7 @@ public nonisolated struct FingertipSettings: Codable, Equatable, Sendable {
     public var bringToFrontEnabled: Bool { allowsBringToFront ?? false }
     public var unblockedApps: [String] { unblockedAppIDs ?? [] }
     public var extraBlockedApps: [String] { extraBlockedAppIDs ?? [] }
+    public var crashReportsEnabled: Bool { sendsCrashReports ?? false }
 
     /// Named after the removed Jev app, where runs were first logged; kept so earlier runs stay
     /// in the same folder.

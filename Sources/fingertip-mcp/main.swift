@@ -28,6 +28,8 @@ if let status = await WindowCapture.runChild(Array(CommandLine.arguments.dropFir
 // up AppKit, which `MacDriver` reaches through `NSWorkspace` and `NSRunningApplication`.
 _ = NSApplication.shared
 
+CrashReporting.start(release: "fingertip@0.7.0")
+
 let session = Session()
 let server = MCPServer(
     name: "fingertip",
