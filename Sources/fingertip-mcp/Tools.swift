@@ -729,6 +729,7 @@ final class Session {
     }
 
     /// `frame: false` leaves out the frame of an element with an alias; one without an alias keeps it.
+    /// An empty frame never goes out: menus measure 0x0 with the app behind, and are pressed through AX.
     private func line(_ element: UIElement, full: Bool, alias: Bool = true, frame: Bool = true) -> String {
         let show: (String) -> String = full ? { $0 } : { Self.clipped($0) }
         var parts = alias ? [element.alias.map { "@\(inspector.reading):\($0)" } ?? "--", element.type] : [element.type]
@@ -736,7 +737,7 @@ final class Session {
         if let text = element.text { parts.append(element.label == nil ? "\"\(show(text))\"" : "= \"\(show(text))\"") }
         if let identifier = element.identifier { parts.append("#\(identifier)") }
         let b = element.bounds
-        if frame || element.alias == nil { parts.append("(\(Int(b.minX)),\(Int(b.minY)) \(Int(b.width))x\(Int(b.height)))") }
+        if (frame || element.alias == nil) && !b.isEmpty { parts.append("(\(Int(b.minX)),\(Int(b.minY)) \(Int(b.width))x\(Int(b.height)))") }
         if !element.isEnabled { parts.append("[deshabilitado]") }
         if let checked = element.isChecked { parts.append(checked ? "[marcado]" : "[desmarcado]") }
         return " " + parts.joined(separator: " ")
