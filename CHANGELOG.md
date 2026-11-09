@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-11-09
+
 ### Added
 - Crash reports through Sentry, for the app and the MCP, on by default and turned off in Settings → General → Privacy. Only crashes are sent: no sessions, breadcrumbs, performance data or hangs, and `beforeSend` drops the host name, user, extra data and messages, keeps only the OS, device-model and app contexts without the locale or the per-Mac `device_app_hash`, and writes the home folder as `~` in paths. A crash is sent on the next launch of the process that hit it. The DSN in `CrashReporting.swift` is empty until a Sentry project exists; while it is, nothing starts.
 
@@ -142,7 +144,8 @@ First release. fingertip lets an agent see and drive an iOS simulator or a macOS
 ### Removed
 - `MaestroDriver`, the XCUITest hierarchy parsing and Maestro as a dependency.
 
-[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/deadcode-labs/fingertip/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/deadcode-labs/fingertip/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/deadcode-labs/fingertip/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/deadcode-labs/fingertip/compare/v0.4.0...v0.5.0
