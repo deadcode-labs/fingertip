@@ -83,6 +83,9 @@ final class Session {
     private var test: TestSession?
     /// Region `read_screen` was pointed at; every outline shows only it until a whole read.
     private var focusRegion: String?
+    /// What the last outline showed of each element, so the next action can reply with only
+    /// what changed. `nil` makes the next outline whole.
+    private var shown: Shown?
     /// Past this many elements the outline suggests reading by region.
     private static let denseThreshold = 150
 
@@ -146,7 +149,7 @@ final class Session {
             ),
             Tool(
                 name: "tap",
-                description: "Taps an element by its alias `@L:N` (preferred) or by coordinates `x`,`y` in the reading's space. It re-reads the screen before tapping: if anything up to that element changed, it does not tap and returns the new screen to choose again. Returns the resulting screen. On a text field, a tap gives it focus: then use `type_text`. On macOS, tapping a pop-up opens its menu and the reading lists its items in the «Menú» region (`Mode › Scientific`); tapping one picks it, and tapping the pop-up again closes it. The «Delivery» line says what was tried and what was verified: `no effect` means the app took the action and nothing changed.",
+                description: "Taps an element by its alias `@L:N` (preferred) or by coordinates `x`,`y` in the reading's space. It re-reads the screen before tapping: if anything up to that element changed, it does not tap and returns the new screen to choose again. Returns what changed on screen. On a text field, a tap gives it focus: then use `type_text`. On macOS, tapping a pop-up opens its menu and the reading lists its items in the «Menú» region (`Mode › Scientific`); tapping one picks it, and tapping the pop-up again closes it. The «Delivery» line says what was tried and what was verified: `no effect` means the app took the action and nothing changed.",
                 properties: [
                     "alias": ["type": "string", "description": "The full alias, as it appears in the reading: `12:5` is element 5 of reading 12."],
                     "x": ["type": "number"],
@@ -516,6 +519,7 @@ final class Session {
         }
         self.target = target
         focusRegion = nil
+        shown = nil
         let connected = "\(closedNote)Connected to \(Self.describe(target)) via \(inspector.driver?.name ?? "?")."
         // Connected, but nothing read yet: the error names the windows to choose from.
         if let failure = inspector.failure { return .error(failure, appending: connected) }
@@ -572,7 +576,7 @@ final class Session {
         } else {
             focusRegion = nil
         }
-        return .text(outline(full: arguments["full"] as? Bool ?? false, skeleton: skeleton))
+        return .text(outline(full: arguments["full"] as? Bool ?? false, skeleton: skeleton, whole: true))
     }
 
     /// Reads in a loop until the element appears (or disappears). Waiting here and not
@@ -630,14 +634,52 @@ final class Session {
         return hits.min { rank($0) < rank($1) }
     }
 
-    /// The same format as sim-use's outline, which is what reads best.
-    private func outline(full: Bool = false, skeleton: Bool = false) -> String {
+    /// An element's line without its alias, and its region: what tells whether it changed.
+    private struct ShownLine: Equatable {
+        let region: String
+        let body: String
+    }
+
+    /// Lines keyed by alias (`@N`), or by the line itself for an element without one.
+    private struct Shown {
+        let app: String?
+        let reading: Int
+        let lines: [String: ShownLine]
+    }
+
+    private func key(_ element: UIElement, _ body: String) -> String {
+        element.alias.map { "@\($0)" } ?? "\(element.region)\n\(body)"
+    }
+
+    /// The same format as sim-use's outline, which is what reads best. After an action it
+    /// lists only the elements that changed since the previous outline: three quarters of
+    /// the tokens an agent spends on fingertip were whole screens, a fifth of them identical
+    /// to the one before. `whole` (a `read_screen`) always lists everything.
+    private func outline(full: Bool = false, skeleton: Bool = false, whole: Bool = false) -> String {
         let size = inspector.screenSize
         var lines = ["App: \(inspector.appLabel ?? "?") (\(inspector.appPackage ?? "?"))  \(Int(size.width))x\(Int(size.height))  · reading \(inspector.reading)"]
         if !inspector.vanishedApps.isEmpty {
             lines.append("⚠ Stopped running since the previous reading (crash?): \(inspector.vanishedApps.joined(separator: ", "))")
         }
         if let focus = focusRegion, !inspector.regions.contains(focus) { focusRegion = nil }
+
+        // Only a plain whole-screen outline is a base to compare with; a region or a skeleton isn't.
+        let previous = shown
+        var current: Shown?
+        if !skeleton && focusRegion == nil {
+            var shownLines: [String: ShownLine] = [:]
+            for element in inspector.elements {
+                let body = line(element, full: false, alias: false)
+                shownLines[key(element, body)] = ShownLine(region: element.region, body: body)
+            }
+            current = Shown(app: inspector.appPackage, reading: inspector.reading, lines: shownLines)
+        }
+        shown = current
+        if !whole, let previous, let current, previous.app == current.app,
+           let changes = changes(from: previous, to: current) {
+            return (lines + changes).joined(separator: "\n")
+        }
+
         for region in inspector.regions {
             let members = inspector.elements(in: region)
             if skeleton || (focusRegion != nil && region != focusRegion) {
@@ -658,9 +700,35 @@ final class Session {
         return lines.joined(separator: "\n")
     }
 
-    private func line(_ element: UIElement, full: Bool) -> String {
+    /// What changed between two outlines, or `nil` when most of it did and the whole screen reads better.
+    private func changes(from previous: Shown, to current: Shown) -> [String]? {
+        let gone = previous.lines.filter { current.lines[$0.key] == nil }
+        let changed = current.lines.filter { previous.lines[$0.key] != $0.value }
+        if changed.isEmpty && gone.isEmpty {
+            return ["No changes since reading \(previous.reading)."]
+        }
+        guard 2 * (changed.count + gone.count) < current.lines.count else { return nil }
+        var lines = ["Only what changed since reading \(previous.reading). Every other element is as listed then and keeps its number: use @\(current.reading):N. `read_screen` lists the whole screen."]
+        for region in inspector.regions {
+            let members = inspector.elements(in: region).filter { element in
+                changed[key(element, line(element, full: false, alias: false))] != nil
+            }
+            guard !members.isEmpty else { continue }
+            lines.append("[\(region)]")
+            lines += members.map { line($0, full: false) }
+        }
+        let goneAliases = gone.keys.filter { $0.hasPrefix("@") }
+            .compactMap { Int($0.dropFirst()) }.sorted()
+        if !goneAliases.isEmpty {
+            lines.append("Gone: " + goneAliases.map { "@\(previous.reading):\($0)" }.joined(separator: ", "))
+        }
+        lines += gone.filter { !$0.key.hasPrefix("@") }.map { "Gone: [\($0.value.region)] \($0.value.body)" }
+        return lines
+    }
+
+    private func line(_ element: UIElement, full: Bool, alias: Bool = true) -> String {
         let show: (String) -> String = full ? { $0 } : { Self.clipped($0) }
-        var parts = [element.alias.map { "@\(inspector.reading):\($0)" } ?? "--", element.type]
+        var parts = alias ? [element.alias.map { "@\(inspector.reading):\($0)" } ?? "--", element.type] : [element.type]
         if let label = element.label { parts.append("\"\(show(label))\"") }
         if let text = element.text { parts.append(element.label == nil ? "\"\(show(text))\"" : "= \"\(show(text))\"") }
         if let identifier = element.identifier { parts.append("#\(identifier)") }
@@ -671,7 +739,7 @@ final class Session {
         return "  " + parts.joined(separator: "  ")
     }
 
-    /// One line and up to 100 characters. Every action returns the whole screen, and
+    /// One line and up to 100 characters. An action can return the whole screen, and
     /// a chat reply can be a page long: cut, it is still recognisable, and
     /// `read_screen` with `full` returns it whole when it has to be read.
     private static func clipped(_ text: String, limit: Int = 100) -> String {

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- MCP actions return only what changed on screen since the previous reply, the aliases that are gone, or `No changes since reading N.`, instead of the whole screen every time. Elements not listed keep their number under the new reading. The whole screen still goes out on `read_screen`, on `connect`, and when half the elements or more changed. Whole screens were 96 % of the tokens fingertip spent in an agent's context; on a Calculator run each tap went from ~1,500 characters to 300–400.
+
 ## [0.8.1] - 2026-11-09
 
 ### Fixed
