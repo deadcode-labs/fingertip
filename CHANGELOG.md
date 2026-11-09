@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The app no longer uses CPU while idle. Hidden, the edge indicator kept rendering its shader every frame (about 10% CPU, more the longer the app ran), and the toast kept animating its icon when it faded out on "Thinking…". The hidden windows now drop their SwiftUI content and get it back when they show again.
+- Screenshots and recordings of Mac apps no longer hang behind a stuck `replayd`. ScreenCaptureKit now runs in a short-lived child (`fingertip-mcp capture` / `record`) instead of in the MCP, which lives as long as its Claude Code session: MCPs that had used it could end up reconnecting to `replayd` in a loop for hours, pinning it at full CPU and stalling every capture on the Mac. A screenshot takes about 75 ms more.
+- A Mac recording no longer outlives the MCP: the child stops and closes the `.mov` when the server dies, SIGKILL included. When `replayd` dies mid-recording, `stop_recording` answers `recording_failed` instead of saving a file that doesn't open, and the next capture doesn't hang.
 
 ## [0.7.0] - 2026-11-06
 

@@ -16,9 +16,16 @@
 //
 
 import AppKit
+import FingertipCore
 
-// ScreenCaptureKit asserts in `CGS_REQUIRE_INIT` in a command-line binary
-// that hasn't touched NSApplication first.
+// `fingertip-mcp capture|record`: the ScreenCaptureKit child the MCP runs for each
+// screenshot and recording (see `WindowCapture`). Its stdout is a pipe to the MCP.
+if let status = await WindowCapture.runChild(Array(CommandLine.arguments.dropFirst()), output: .standardOutput) {
+    exit(status)
+}
+
+// ScreenCaptureKit no longer runs here (see `WindowCapture`); the MCP still sets
+// up AppKit, which `MacDriver` reaches through `NSWorkspace` and `NSRunningApplication`.
 _ = NSApplication.shared
 
 let session = Session()

@@ -71,7 +71,7 @@ public nonisolated struct SimulatorDriver: ScreenDriver {
     public let udid: String
     private let simUse = SimUse()
     private let simctl = Simctl()
-    private let recorder = SimulatorRecorder()
+    private let recorder = ProcessRecorder()
 
     public init(udid: String) {
         self.udid = udid
@@ -99,7 +99,10 @@ public nonisolated struct SimulatorDriver: ScreenDriver {
 
     public func startRecording(to url: URL) async throws {
         try await simctl.validate(udid: udid)
-        try await recorder.start(udid: udid, to: url)
+        try await recorder.start(
+            URL(filePath: "/usr/bin/xcrun"), ["simctl", "io", udid, "recordVideo", "--codec", "h264", "--force", url.path],
+            to: url, waitsForReady: false
+        )
     }
 
     public func stopRecording() async throws -> URL {
