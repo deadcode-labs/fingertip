@@ -739,7 +739,7 @@ final class Session {
         if frame || element.alias == nil { parts.append("(\(Int(b.minX)),\(Int(b.minY)) \(Int(b.width))x\(Int(b.height)))") }
         if !element.isEnabled { parts.append("[deshabilitado]") }
         if let checked = element.isChecked { parts.append(checked ? "[marcado]" : "[desmarcado]") }
-        return "  " + parts.joined(separator: "  ")
+        return " " + parts.joined(separator: " ")
     }
 
     /// One line and up to 100 characters. An action can return the whole screen, and
