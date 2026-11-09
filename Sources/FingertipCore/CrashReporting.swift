@@ -2,8 +2,8 @@
 //  CrashReporting.swift
 //  FingertipCore
 //
-//  Crash reports through Sentry, for the app and `fingertip-mcp`. Off unless the
-//  user turns it on in Settings, and crashes only: no sessions, breadcrumbs,
+//  Crash reports through Sentry, for the app and `fingertip-mcp`. On unless the
+//  user turns it off in Settings, and crashes only: no sessions, breadcrumbs,
 //  performance, hangs or captured errors. A crash is written to disk when it
 //  happens and sent on the process's next launch, after `beforeSend` strips
 //  what could identify the user or carry screen contents.
