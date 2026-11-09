@@ -19,7 +19,6 @@
 
 import AppKit
 import ApplicationServices
-import ScreenCaptureKit
 
 nonisolated enum MacDriverError: FingertipError {
     case notTrusted
@@ -253,7 +252,7 @@ actor MacDriver: ScreenDriver {
     /// The window reads and actions go to: its number, and the process start time, so a
     /// relaunched app that reuses the number is not mistaken for the same window.
     var chosenWindow: (number: CGWindowID, processStart: Double)?
-    private let recorder = WindowRecorder()
+    private let recorder = ProcessRecorder()
 
     init(app: MacApp) {
         bundleID = app.bundleID
@@ -861,7 +860,15 @@ actor MacDriver: ScreenDriver {
     /// Las instancias de esa app. Si es la elegida, solo las de su copia: matar
     /// la build de Xcode no tiene que cerrar también la de /Applications.
     private func instances(of bundleID: String) -> [NSRunningApplication] {
-        NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).filter {
+        var apps = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID)
+        // Empty for a moment after another process captured the screen, which the capture
+        // child (see `WindowCapture`) does on every screenshot. The workspace's list is not.
+        if apps.isEmpty {
+            apps = NSWorkspace.shared.runningApplications.filter {
+                $0.bundleIdentifier?.caseInsensitiveCompare(bundleID) == .orderedSame
+            }
+        }
+        return apps.filter {
             !$0.isTerminated && (bundleID != self.bundleID || $0.bundleURL?.standardizedFileURL == bundleURL)
         }
     }
@@ -893,31 +900,26 @@ actor MacDriver: ScreenDriver {
     /// sentido (Calculator: 55×96 fuera de la pantalla), así que no coincide y
     /// no se captura; AX la sigue leyendo bien.
     func screenshot() async throws -> Data {
-        let (window, crop) = try await captureWindow()
-        let filter = SCContentFilter(desktopIndependentWindow: window)
-        let configuration = SCStreamConfiguration()
-        let scale = CGFloat(filter.pointPixelScale)
-        configuration.width = Int(filter.contentRect.width * scale)
-        configuration.height = Int(filter.contentRect.height * scale)
-        configuration.showsCursor = false
-
-        var image = try await SCScreenshotManager.captureImage(contentFilter: filter, configuration: configuration)
-        if let crop {
-            let pixels = CGRect(x: crop.minX * scale, y: crop.minY * scale, width: crop.width * scale, height: crop.height * scale)
-            guard let sheet = image.cropping(to: pixels) else {
-                throw MacDriverError.captureFailed("couldn't crop the sheet")
-            }
-            image = sheet
+        let (target, name) = try captureTarget()
+        let result: SubprocessOutput
+        do {
+            result = try await Subprocess.run(
+                WindowCapture.helper, ["capture", try Self.json(target)],
+                label: "fingertip-mcp capture", timeout: .seconds(15), isRead: true
+            )
+        } catch is SubprocessTimeout {
+            throw MacDriverError.captureFailed("ScreenCaptureKit didn't answer within 15 s")
         }
-        guard let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else {
-            throw MacDriverError.captureFailed("couldn't encode the PNG")
+        switch result.status {
+        case 0: return result.stdout
+        case WindowCapture.notCapturableStatus: throw MacDriverError.notCapturable(name)
+        default: throw MacDriverError.captureFailed(String(decoding: result.stderr, as: UTF8.self))
         }
-        return png
     }
 
-    /// The ScreenCaptureKit window of the app's front window, and the crop to apply when that
-    /// window is a sheet. Shared by `screenshot` and `startRecording`.
-    private func captureWindow() async throws -> (window: SCWindow, crop: CGRect?) {
+    /// What the capture child needs to find the app's front window in ScreenCaptureKit, and the
+    /// app's name for errors. Shared by `screenshot` and `startRecording`.
+    private func captureTarget() throws -> (target: CaptureTarget, name: String) {
         guard let app = runningApp() else { throw MacDriverError.notRunning(bundleID) }
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 2)
@@ -925,14 +927,11 @@ actor MacDriver: ScreenDriver {
         guard let target = Self.read(axWindow).frame else {
             throw MacDriverError.noWindow(bundleID)
         }
-        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
+        let name = app.localizedName ?? bundleID
+        let isSheet = Self.read(axWindow).role == "AXSheet"
 
-        // A window with a number is matched by it: two windows of one app can share a frame.
-        if Self.read(axWindow).role != "AXSheet", let number = Self.windowNumber(axWindow) {
-            guard let window = content.windows.first(where: { $0.windowID == number }), window.frame == target else {
-                throw MacDriverError.notCapturable(app.localizedName ?? bundleID)
-            }
-            return (window, nil)
+        if !isSheet, let number = Self.windowNumber(axWindow) {
+            return (CaptureTarget(pid: app.processIdentifier, bundleID: bundleID, number: number, frame: target, crop: nil), name)
         }
 
         // A sheet has its own ScreenCaptureKit window, but capturing it returns the whole parent
@@ -940,29 +939,24 @@ actor MacDriver: ScreenDriver {
         // sheet is cropped out: the image lands in the same space as the reading.
         var frame = target
         var crop: CGRect?
-        if Self.read(axWindow).role == "AXSheet",
+        if isSheet,
            let parent: AXUIElement = Self.attribute(axWindow, "AXParent"),
            let parentFrame = Self.read(parent).frame {
             frame = parentFrame
             crop = target.offsetBy(dx: -parentFrame.minX, dy: -parentFrame.minY)
         }
+        return (CaptureTarget(pid: app.processIdentifier, bundleID: bundleID, number: nil, frame: frame, crop: crop), name)
+    }
 
-        // Only the app's windows or its extensions': two maximised windows share a frame, and
-        // without this Chrome's slipped in.
-        let matches = content.windows.filter { window in
-            guard window.windowLayer == 0, window.frame == frame, let owner = window.owningApplication else { return false }
-            return owner.processID == app.processIdentifier || owner.bundleIdentifier.hasPrefix(bundleID + ".")
-        }
-        guard let window = matches.first(where: { $0.owningApplication?.processID == app.processIdentifier }) ?? matches.first else {
-            throw MacDriverError.notCapturable(app.localizedName ?? bundleID)
-        }
-        return (window, crop)
+    private static func json(_ target: CaptureTarget) throws -> String {
+        String(decoding: try JSONEncoder().encode(target), as: UTF8.self)
     }
 
     func startRecording(to url: URL) async throws {
-        let (window, _) = try await captureWindow()
-        // SCWindow is not Sendable, so the recorder gets the window's id and looks it up itself.
-        try await recorder.start(windowID: window.windowID, to: url)
+        var (target, _) = try captureTarget()
+        // The whole window, sheet included, without the crop a screenshot of a sheet gets.
+        target.crop = nil
+        try await recorder.start(WindowCapture.helper, ["record", try Self.json(target), url.path], to: url, waitsForReady: true)
     }
 
     func stopRecording() async throws -> URL {

@@ -2,16 +2,15 @@
 //  Recording.swift
 //  FingertipCore
 //
-//  Video of the device while the agent works. The simulator is recorded by
-//  `simctl io recordVideo`, a child process that only closes its `.mov`
-//  cleanly on SIGINT; a Mac app's window by ScreenCaptureKit's
-//  `SCRecordingOutput`. One recording per driver at a time. Both recorders are
-//  actors: they hold a process or a stream and are awaited from anywhere.
+//  Video of the device while the agent works, always by a child process that
+//  only closes its `.mov` cleanly on SIGINT: `simctl io recordVideo` for the
+//  simulator, `fingertip-mcp record` (see `WindowCapture`) for a Mac app's
+//  window. One recording per driver at a time. The recorder is an actor: it
+//  holds the process and is awaited from anywhere.
 //
 
-import CoreMedia
+import Darwin
 import Foundation
-import ScreenCaptureKit
 
 public nonisolated enum RecordingError: FingertipError {
     case alreadyRecording(URL)
@@ -41,52 +40,87 @@ public nonisolated enum RecordingError: FingertipError {
     }
 }
 
-// MARK: - Simulator
-
-actor SimulatorRecorder {
+actor ProcessRecorder {
     private var process: Process?
     private var errors: Pipe?
+    /// Kept open while recording: `fingertip-mcp record` stops when it closes, so a recording
+    /// doesn't outlive an MCP that died without stopping it.
+    private var input: Pipe?
     private var output: URL?
 
-    func start(udid: String, to url: URL) async throws {
+    /// Runs `executable` recording to `url`. With `waitsForReady`, it reports it is recording by
+    /// writing a line; otherwise (simctl) it is taken as recording if it is still up after 700 ms.
+    func start(_ executable: URL, _ arguments: [String], to url: URL, waitsForReady: Bool) async throws {
         if let output { throw RecordingError.alreadyRecording(output) }
 
         let process = Process()
-        process.executableURL = URL(filePath: "/usr/bin/xcrun")
-        process.arguments = ["simctl", "io", udid, "recordVideo", "--codec", "h264", "--force", url.path]
+        process.executableURL = executable
+        process.arguments = arguments
         let errors = Pipe()
-        process.standardOutput = FileHandle.nullDevice
+        let input = Pipe()
+        let ready = Pipe()
+        process.standardInput = input
+        process.standardOutput = waitsForReady ? ready : FileHandle.nullDevice
         process.standardError = errors
         try process.run()
+        // The child has its own copy; with this one open, a child that exits without writing
+        // would never close the pipe, and the wait below would never end.
+        try? ready.fileHandleForWriting.close()
 
         // Claim the state before suspending: a `stop` or a second `start` that runs during the
         // wait below must see this recording, and a cancellation must not leave the process behind.
         self.process = process
         self.errors = errors
+        self.input = input
         output = url
 
-        // simctl exits at once when the device is not booted or the path is bad;
-        // otherwise it keeps running until it is interrupted.
-        do {
-            try await Task.sleep(for: .milliseconds(700))
-        } catch {
+        // Both exit at once when the device or the window is not there, or the path is bad;
+        // otherwise they keep running until interrupted.
+        let started: Bool
+        if waitsForReady {
+            started = await Self.readsLine(ready.fileHandleForReading, pid: process.processIdentifier, within: .seconds(10))
+        } else {
+            started = (try? await Task.sleep(for: .milliseconds(700))) != nil
+        }
+        if Task.isCancelled {
             if self.process === process { discard() }
             if process.isRunning { process.interrupt() }
-            throw error
+            throw CancellationError()
         }
         // A `stop` during the wait already took the state (and the process) over.
         guard self.process === process else { return }
-        guard process.isRunning else {
+        guard started, process.isRunning else {
             discard()
+            // Killed by `readsLine` after 10 s, or exiting on its own: let it finish so stderr is complete.
+            if process.isRunning { kill(process.processIdentifier, SIGKILL) }
+            process.waitUntilExit()
             let detail = String(decoding: errors.fileHandleForReading.availableData, as: UTF8.self)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            throw RecordingError.failed(detail.isEmpty ? "simctl exited with \(process.terminationStatus)" : detail)
+            throw RecordingError.failed(detail.isEmpty
+                ? (started ? "the recorder exited with \(process.terminationStatus)" : "the recording didn't start within 10 s")
+                : detail)
+        }
+    }
+
+    /// Whether `handle` gets a line before it closes. After `timeout` the process is killed,
+    /// which closes it. Read on a thread of its own, off the cooperative pool.
+    private static func readsLine(_ handle: FileHandle, pid: pid_t, within timeout: Duration) async -> Bool {
+        let deadline = Task {
+            guard (try? await Task.sleep(for: timeout)) != nil else { return }
+            kill(pid, SIGKILL)
+        }
+        defer { deadline.cancel() }
+        return await withCheckedContinuation { continuation in
+            Thread.detachNewThread {
+                continuation.resume(returning: !handle.availableData.isEmpty)
+            }
         }
     }
 
     private func discard() {
         process = nil
         errors = nil
+        input = nil
         output = nil
     }
 
@@ -96,6 +130,9 @@ actor SimulatorRecorder {
         self.output = nil
         let errors = self.errors
         self.errors = nil
+        // Closed only once it has exited: closing it is also a stop for `fingertip-mcp record`.
+        let input = self.input
+        self.input = nil
 
         // The `.mov` is only finalised on SIGINT; SIGTERM leaves it unplayable.
         if process.isRunning { process.interrupt() }
@@ -105,105 +142,19 @@ actor SimulatorRecorder {
             waited += 1
         }
         if process.isRunning {
-            process.terminate()
-            throw RecordingError.failed("simctl didn't close the video within 10 s; the file may not open")
+            // SIGKILL: `fingertip-mcp record` takes SIGTERM as one more request to stop, and it is
+            // already stuck stopping.
+            kill(process.processIdentifier, SIGKILL)
+            throw RecordingError.failed("the recorder didn't close the video within 10 s; the file may not open")
         }
+        withExtendedLifetime(input) {}
         let size = (try? FileManager.default.attributesOfItem(atPath: output.path)[.size] as? Int) ?? 0
-        guard size > 0 else {
+        // A recording cut short (`replayd` died under `fingertip-mcp record`) leaves a file that
+        // doesn't open; the recorder exits with an error then.
+        guard process.terminationStatus == 0, size > 0 else {
             let detail = errors.map { String(decoding: $0.fileHandleForReading.availableData, as: UTF8.self) } ?? ""
             throw RecordingError.failed(detail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? "the file is empty" : detail)
-        }
-        return output
-    }
-}
-
-// MARK: - Mac window
-
-/// Receives the end of the recording and any failure of the stream. Callbacks arrive on
-/// ScreenCaptureKit's queue, so the state is behind a lock.
-nonisolated final class RecordingDelegate: NSObject, SCRecordingOutputDelegate, SCStreamDelegate, @unchecked Sendable {
-    private let lock = NSLock()
-    private var finished = false
-    private var failure: String?
-
-    var state: (finished: Bool, failure: String?) {
-        lock.withLock { (finished, failure) }
-    }
-
-    func recordingOutputDidFinishRecording(_ recordingOutput: SCRecordingOutput) {
-        lock.withLock { finished = true }
-    }
-
-    func recordingOutput(_ recordingOutput: SCRecordingOutput, didFailWithError error: any Error) {
-        lock.withLock { failure = error.localizedDescription }
-    }
-
-    func stream(_ stream: SCStream, didStopWithError error: any Error) {
-        lock.withLock { failure = error.localizedDescription }
-    }
-}
-
-actor WindowRecorder {
-    private var stream: SCStream?
-    private var delegate: RecordingDelegate?
-    private var output: URL?
-
-    func start(windowID: CGWindowID, to url: URL) async throws {
-        if let output { throw RecordingError.alreadyRecording(output) }
-        // Claim the recording before the first suspension, as `SimulatorRecorder` does: a second
-        // `start` during the awaits below must see this one, not open a second stream.
-        output = url
-        var started = false
-        defer { if !started { output = nil } }
-
-        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: false)
-        guard let window = content.windows.first(where: { $0.windowID == windowID }) else {
-            throw RecordingError.failed("the window is gone")
-        }
-
-        let filter = SCContentFilter(desktopIndependentWindow: window)
-        let scale = CGFloat(filter.pointPixelScale)
-        let configuration = SCStreamConfiguration()
-        configuration.width = Int(filter.contentRect.width * scale)
-        configuration.height = Int(filter.contentRect.height * scale)
-        configuration.showsCursor = false
-        configuration.minimumFrameInterval = CMTime(value: 1, timescale: 30)
-
-        let recording = SCRecordingOutputConfiguration()
-        recording.outputURL = url
-        recording.outputFileType = .mov
-        recording.videoCodecType = .h264
-
-        let delegate = RecordingDelegate()
-        let stream = SCStream(filter: filter, configuration: configuration, delegate: delegate)
-        do {
-            try stream.addRecordingOutput(SCRecordingOutput(configuration: recording, delegate: delegate))
-            try await stream.startCapture()
-        } catch {
-            throw RecordingError.failed(error.localizedDescription)
-        }
-        self.stream = stream
-        self.delegate = delegate
-        started = true
-    }
-
-    func stop() async throws -> URL {
-        guard let stream, let delegate, let output else { throw RecordingError.notRecording }
-        self.stream = nil
-        self.delegate = nil
-        self.output = nil
-
-        // A window closed mid-recording has already stopped the stream: that stop fails, the file is still there.
-        try? await stream.stopCapture()
-        var waited = 0
-        while !delegate.state.finished && waited < 200 {
-            try? await Task.sleep(for: .milliseconds(50))
-            waited += 1
-        }
-        let size = (try? FileManager.default.attributesOfItem(atPath: output.path)[.size] as? Int) ?? 0
-        guard delegate.state.finished, size > 0 else {
-            throw RecordingError.failed(delegate.state.failure ?? "the video wasn't closed in time")
         }
         return output
     }
