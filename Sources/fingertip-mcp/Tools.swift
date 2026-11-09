@@ -344,7 +344,8 @@ final class Session {
         guard let test = await closeTest(passed: passed, notes: arguments["notes"] as? String) else {
             return .error(ToolError.noTest)
         }
-        return .text("Test «\(test.name)» closed: \(passed ? "passed" : "failed").\nFolder: \(test.folder.path)")
+        let video = test.recordingError.map { "\nVideo: \($0)" } ?? ""
+        return .text("Test «\(test.name)» closed: \(passed ? "passed" : "failed").\nFolder: \(test.folder.path)\(video)")
     }
 
     // MARK: - Status toast

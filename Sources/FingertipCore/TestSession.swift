@@ -51,11 +51,13 @@ public final class TestSession {
     }
 
     /// The recording could not start (a Mac app with no window chosen yet, a missing
-    /// permission): the test goes on without video, and `test.json` says why.
+    /// permission) or stopped before the end: `test.json` says why.
     public func recordingFailed(_ reason: String) {
         summary["recording_error"] = reason
         writeSummary()
     }
+
+    public var recordingError: String? { summary["recording_error"] as? String }
 
     /// One tool call. The screen after it is saved once per distinct image. Typed text is
     /// redacted as in the toast and Jev's log: the arguments keep only its length.

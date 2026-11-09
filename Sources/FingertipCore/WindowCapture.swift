@@ -16,6 +16,7 @@ import AppKit
 import CoreMedia
 import Foundation
 import ScreenCaptureKit
+import VideoToolbox
 
 /// The window to capture, as the MCP sees it through Accessibility. Goes to the child as JSON.
 nonisolated struct CaptureTarget: Codable, Sendable {
@@ -121,7 +122,14 @@ public nonisolated enum WindowCapture {
     }
 
     /// Records until SIGINT or SIGTERM, until stdin closes because the MCP is gone, or until the
-    /// stream fails, then closes the `.mov`.
+    /// stream fails, then closes the `.mov`; a stream that failed first is an error, so a video
+    /// cut short doesn't pass for a whole one.
+    ///
+    /// While it records it also serves the MCP's screenshots of the window: when another process
+    /// of this binary closes its ScreenCaptureKit connection, `replayd` interrupts this stream
+    /// too, so a `capture` child per screenshot would cut the video at the first one. Each line
+    /// on stdin is a `FrameRequest` in JSON; the answer on stdout is `png <byte count>\n` and the
+    /// PNG, or `error <reason>\n`.
     private static func record(_ target: CaptureTarget, to url: URL, output: FileHandle) async throws {
         let filter = SCContentFilter(desktopIndependentWindow: try await window(for: target))
         let scale = CGFloat(filter.pointPixelScale)
@@ -130,33 +138,46 @@ public nonisolated enum WindowCapture {
         configuration.height = Int(filter.contentRect.height * scale)
         configuration.showsCursor = false
         configuration.minimumFrameInterval = CMTime(value: 1, timescale: 30)
+        // `LatestFrame` holds on to one buffer of the pool the recording also draws from.
+        configuration.queueDepth = 6
 
         let recording = SCRecordingOutputConfiguration()
         recording.outputURL = url
         recording.outputFileType = .mov
         recording.videoCodecType = .h264
 
-        let (stops, stop) = AsyncStream.makeStream(of: Void.self)
-        // The stream fails when `replayd` dies. The child ends at once then: one left running
-        // stalls the next capture child, which `replayd` takes for the same client.
-        let delegate = RecordingDelegate { stop.yield() }
+        // `true` when the MCP asked to stop, `false` when the stream failed.
+        let (stops, stop) = AsyncStream.makeStream(of: Bool.self)
+        // The stream fails when `replayd` dies or the window closes. The child ends at once then:
+        // one left running stalls the next capture child, which `replayd` takes for the same client.
+        let delegate = RecordingDelegate { stop.yield(false) }
+        let frames = LatestFrame()
         let stream = SCStream(filter: filter, configuration: configuration, delegate: delegate)
         try stream.addRecordingOutput(SCRecordingOutput(configuration: recording, delegate: delegate))
+        try stream.addStreamOutput(frames, type: .screen, sampleHandlerQueue: DispatchQueue(label: "fingertip-record.frames"))
         try await stream.startCapture()
         output.write(Data("recording\n".utf8))
 
         let signals = [SIGINT, SIGTERM].map { number -> DispatchSourceSignal in
             signal(number, SIG_IGN)
             let source = DispatchSource.makeSignalSource(signal: number, queue: .global())
-            source.setEventHandler { stop.yield() }
+            source.setEventHandler { stop.yield(true) }
             source.resume()
             return source
         }
         Thread.detachNewThread {
-            _ = try? FileHandle.standardInput.readToEnd()
-            stop.yield()
+            while let line = readLine() {
+                // Drained per answer: the image and the PNG keep the frame's buffer alive, and
+                // with a few of those held the recording stops writing while the stream goes on.
+                output.write(autoreleasepool { answer(line, frames: frames, scale: scale) })
+            }
+            stop.yield(true)
         }
-        for await _ in stops { break }
+        var requested = true
+        for await reason in stops {
+            requested = reason
+            break
+        }
         withExtendedLifetime(signals) {}
 
         // A window closed mid-recording has already stopped the stream: that stop fails, the file
@@ -170,6 +191,63 @@ public nonisolated enum WindowCapture {
         guard delegate.state.finished else {
             throw ChildFailure.failed(delegate.state.failure ?? "the video wasn't closed in time")
         }
+        guard requested else {
+            throw ChildFailure.failed("the recording stopped by itself (the window closed, or `replayd` cut it: \(delegate.state.failure ?? "no reason given")); the file keeps what was recorded until then")
+        }
+    }
+
+    /// The answer to one line of the MCP: the window's latest frame as a PNG, cropped to the
+    /// request's sheet.
+    private static func answer(_ line: String, frames: LatestFrame, scale: CGFloat) -> Data {
+        guard let request = try? JSONDecoder().decode(FrameRequest.self, from: Data(line.utf8)) else {
+            return Data("error bad request\n".utf8)
+        }
+        // The first frame arrives a few milliseconds after `startCapture`.
+        var waited = 0
+        while frames.current == nil && waited < 40 {
+            Thread.sleep(forTimeInterval: 0.05)
+            waited += 1
+        }
+        var image: CGImage?
+        guard let pixels = frames.current,
+              VTCreateCGImageFromCVPixelBuffer(pixels, options: nil, imageOut: &image) == noErr,
+              var image
+        else { return Data("error no frame from the recording yet\n".utf8) }
+        if let crop = request.crop {
+            let rect = CGRect(x: crop.minX * scale, y: crop.minY * scale, width: crop.width * scale, height: crop.height * scale)
+            guard let sheet = image.cropping(to: rect) else { return Data("error couldn't crop the sheet\n".utf8) }
+            image = sheet
+        }
+        guard let png = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else {
+            return Data("error couldn't encode the PNG\n".utf8)
+        }
+        return Data("png \(png.count)\n".utf8) + png
+    }
+}
+
+/// A screenshot asked of a running `fingertip-mcp record`: for a sheet, where it sits in the
+/// recorded window.
+nonisolated struct FrameRequest: Codable, Sendable {
+    var crop: CGRect?
+}
+
+/// The stream's latest complete frame. ScreenCaptureKit only sends a new one when the window
+/// changes, so the last complete one is what the window shows. Callbacks arrive on the stream's
+/// queue; the buffer is behind a lock.
+nonisolated final class LatestFrame: NSObject, SCStreamOutput, @unchecked Sendable {
+    private let lock = NSLock()
+    private var buffer: CVPixelBuffer?
+
+    var current: CVPixelBuffer? { lock.withLock { buffer } }
+
+    func stream(_ stream: SCStream, didOutputSampleBuffer sampleBuffer: CMSampleBuffer, of type: SCStreamOutputType) {
+        guard type == .screen,
+              let attachments = CMSampleBufferGetSampleAttachmentsArray(sampleBuffer, createIfNecessary: false) as? [[SCStreamFrameInfo: Any]],
+              let status = (attachments.first?[.status] as? Int).flatMap(SCFrameStatus.init(rawValue:)),
+              status == .complete,
+              let pixels = sampleBuffer.imageBuffer
+        else { return }
+        lock.withLock { buffer = pixels }
     }
 }
 

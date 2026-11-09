@@ -253,6 +253,8 @@ actor MacDriver: ScreenDriver {
     /// relaunched app that reuses the number is not mistaken for the same window.
     var chosenWindow: (number: CGWindowID, processStart: Double)?
     private let recorder = ProcessRecorder()
+    /// The window being recorded: while it is, its screenshots come from the recorder.
+    private var recordedWindow: CapturedWindow?
 
     init(app: MacApp) {
         bundleID = app.bundleID
@@ -274,6 +276,7 @@ actor MacDriver: ScreenDriver {
     @discardableResult
     func disconnect() async -> URL? {
         var recording: URL?
+        recordedWindow = nil
         do {
             recording = try await recorder.stop()
         } catch RecordingError.notRecording {
@@ -899,8 +902,18 @@ actor MacDriver: ScreenDriver {
     /// Una ventana de otro Space le llega a ScreenCaptureKit con un frame sin
     /// sentido (Calculator: 55×96 fuera de la pantalla), así que no coincide y
     /// no se captura; AX la sigue leyendo bien.
+    ///
+    /// While the same window is being recorded, the recorder answers: a `capture` child would cut
+    /// the video when it exits (see `WindowCapture.record`).
     func screenshot() async throws -> Data {
-        let (target, name) = try captureTarget()
+        let (target, window, name) = try captureTarget()
+        if let recordedWindow {
+            guard recordedWindow.matches(window) else {
+                throw MacDriverError.captureFailed("another window is being recorded, and capturing this one would cut that video. Stop the recording first.")
+            }
+            if let png = try await recorder.frame(crop: target.crop) { return png }
+            // The recorder is gone (the window closed): nothing left to cut.
+        }
         let result: SubprocessOutput
         do {
             result = try await Subprocess.run(
@@ -917,9 +930,10 @@ actor MacDriver: ScreenDriver {
         }
     }
 
-    /// What the capture child needs to find the app's front window in ScreenCaptureKit, and the
-    /// app's name for errors. Shared by `screenshot` and `startRecording`.
-    private func captureTarget() throws -> (target: CaptureTarget, name: String) {
+    /// What the capture child needs to find the app's front window in ScreenCaptureKit, the window
+    /// that gets captured (a sheet's parent), and the app's name for errors. Shared by
+    /// `screenshot` and `startRecording`.
+    private func captureTarget() throws -> (target: CaptureTarget, window: CapturedWindow, name: String) {
         guard let app = runningApp() else { throw MacDriverError.notRunning(bundleID) }
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 2)
@@ -931,7 +945,8 @@ actor MacDriver: ScreenDriver {
         let isSheet = Self.read(axWindow).role == "AXSheet"
 
         if !isSheet, let number = Self.windowNumber(axWindow) {
-            return (CaptureTarget(pid: app.processIdentifier, bundleID: bundleID, number: number, frame: target, crop: nil), name)
+            return (CaptureTarget(pid: app.processIdentifier, bundleID: bundleID, number: number, frame: target, crop: nil),
+                    CapturedWindow(pid: app.processIdentifier, number: number, frame: target), name)
         }
 
         // A sheet has its own ScreenCaptureKit window, but capturing it returns the whole parent
@@ -939,13 +954,16 @@ actor MacDriver: ScreenDriver {
         // sheet is cropped out: the image lands in the same space as the reading.
         var frame = target
         var crop: CGRect?
+        var number: CGWindowID?
         if isSheet,
            let parent: AXUIElement = Self.attribute(axWindow, "AXParent"),
            let parentFrame = Self.read(parent).frame {
             frame = parentFrame
             crop = target.offsetBy(dx: -parentFrame.minX, dy: -parentFrame.minY)
+            number = Self.windowNumber(parent)
         }
-        return (CaptureTarget(pid: app.processIdentifier, bundleID: bundleID, number: nil, frame: frame, crop: crop), name)
+        return (CaptureTarget(pid: app.processIdentifier, bundleID: bundleID, number: nil, frame: frame, crop: crop),
+                CapturedWindow(pid: app.processIdentifier, number: number, frame: frame), name)
     }
 
     private static func json(_ target: CaptureTarget) throws -> String {
@@ -953,14 +971,16 @@ actor MacDriver: ScreenDriver {
     }
 
     func startRecording(to url: URL) async throws {
-        var (target, _) = try captureTarget()
+        var (target, window, _) = try captureTarget()
         // The whole window, sheet included, without the crop a screenshot of a sheet gets.
         target.crop = nil
         try await recorder.start(WindowCapture.helper, ["record", try Self.json(target), url.path], to: url, waitsForReady: true)
+        recordedWindow = window
     }
 
     func stopRecording() async throws -> URL {
-        try await recorder.stop()
+        recordedWindow = nil
+        return try await recorder.stop()
     }
 
     // MARK: - AX
@@ -1012,5 +1032,19 @@ actor MacDriver: ScreenDriver {
         guard CFGetTypeID(value) == AXValueGetTypeID() else { return nil }
         var size = CGSize.zero
         return AXValueGetValue(value as! AXValue, .cgSize, &size) ? size : nil
+    }
+}
+
+/// The window a capture shows: a sheet's parent for a sheet. ScreenCaptureKit follows a window
+/// that moves, so the number decides when both have one; the frame otherwise.
+nonisolated struct CapturedWindow: Equatable {
+    let pid: pid_t
+    let number: CGWindowID?
+    let frame: CGRect
+
+    func matches(_ other: CapturedWindow) -> Bool {
+        guard pid == other.pid else { return false }
+        if let number, let otherNumber = other.number { return number == otherNumber }
+        return frame == other.frame
     }
 }
