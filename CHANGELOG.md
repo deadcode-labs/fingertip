@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Mac test videos no longer stop a fraction of a second in. Since 0.8.0 every screenshot of a test's trace ran in its own `fingertip-mcp capture` child, and when that child exited `replayd` also interrupted the recording child's stream, so the video ended at the first traced tool while the test reported it whole. While a window is being recorded, its screenshots now come from the recorder itself; a screenshot of another window during a recording is refused instead of cutting the video.
+- A Mac recording that stops on its own (the window closed, a relaunch) is now `recording_failed`, naming the file with what was recorded until then, instead of passing for a whole video. `end_test` says so in a `Video:` line, and `test.json` keeps it in `recording_error`.
+
 ## [0.8.0] - 2026-11-09
 
 ### Added
