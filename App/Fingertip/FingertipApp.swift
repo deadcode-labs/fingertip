@@ -11,6 +11,7 @@ struct FingertipApp: App {
     init() {
         Task { await OverlayBeaconServer.shared.start() }
         _ = AppUpdater.shared
+        CrashReporting.start(release: "fingertip@" + (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""))
     }
 
     var body: some Scene {

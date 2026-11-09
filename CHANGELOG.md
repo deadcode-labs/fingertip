@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Crash reports through Sentry, for the app and the MCP, on by default and turned off in Settings → General → Privacy. Only crashes are sent: no sessions, breadcrumbs, performance data or hangs, and `beforeSend` drops the host name, user, extra data and messages, keeps only the OS, device-model and app contexts without the locale or the per-Mac `device_app_hash`, and writes the home folder as `~` in paths. A crash is sent on the next launch of the process that hit it. The DSN in `CrashReporting.swift` is empty until a Sentry project exists; while it is, nothing starts.
+
 ### Fixed
 - The app no longer uses CPU while idle. Hidden, the edge indicator kept rendering its shader every frame (about 10% CPU, more the longer the app ran), and the toast kept animating its icon when it faded out on "Thinking…". The hidden windows now drop their SwiftUI content and get it back when they show again.
 - Screenshots and recordings of Mac apps no longer hang behind a stuck `replayd`. ScreenCaptureKit now runs in a short-lived child (`fingertip-mcp capture` / `record`) instead of in the MCP, which lives as long as its Claude Code session: MCPs that had used it could end up reconnecting to `replayd` in a loop for hours, pinning it at full CPU and stalling every capture on the Mac. A screenshot takes about 75 ms more.

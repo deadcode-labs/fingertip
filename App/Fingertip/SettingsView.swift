@@ -147,6 +147,17 @@ private struct GeneralPane: View {
                 Text("Updating the app also updates the `fingertip-mcp` it ships with: reconnect with `/mcp`.")
             }
 
+            Section {
+                Toggle("Send crash reports", isOn: Binding(
+                    get: { settings.crashReportsEnabled },
+                    set: { settings.sendsCrashReports = $0 }
+                ))
+            } header: {
+                Text("Privacy")
+            } footer: {
+                Text("When the app or the MCP crashes, sends the stack trace, macOS version and Mac model to Sentry on the next launch. Nothing from your screen, what was typed, your user name or your Mac’s name. Takes effect after relaunching the app and reconnecting with `/mcp`.")
+            }
+
             if let saveError {
                 Label(saveError, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)

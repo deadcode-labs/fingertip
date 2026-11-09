@@ -22,8 +22,15 @@ let package = Package(
         .library(name: "FingertipCore", targets: ["FingertipCore"]),
         .executable(name: "fingertip-mcp", targets: ["fingertip-mcp"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/getsentry/sentry-cocoa", from: "9.33.0"),
+    ],
     targets: [
-        .target(name: "FingertipCore", swiftSettings: concurrency),
+        .target(
+            name: "FingertipCore",
+            dependencies: [.product(name: "Sentry", package: "sentry-cocoa")],
+            swiftSettings: concurrency
+        ),
         .executableTarget(
             name: "fingertip-mcp",
             dependencies: ["FingertipCore"],
