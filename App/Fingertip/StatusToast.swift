@@ -81,6 +81,7 @@ final class StatusToast {
         model.isVisible = true
         let window = self.window ?? makeWindow()
         self.window = window
+        if window.contentView == nil { window.contentView = NSHostingView(rootView: ToastView(model: model)) }
         place(window)
         window.alphaValue = 0
         window.orderFrontRegardless()
@@ -99,6 +100,8 @@ final class StatusToast {
                 Task { @MainActor in
                     guard self.hideGeneration == generation else { return }
                     window.orderOut(nil)
+                    // A hidden toast left on "Thinking…" or "working" would keep animating its icon.
+                    window.contentView = nil
                     self.model.isVisible = false
                 }
             })
@@ -121,7 +124,6 @@ final class StatusToast {
         window.level = .statusBar
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
-        window.contentView = NSHostingView(rootView: ToastView(model: model))
         return window
     }
 }

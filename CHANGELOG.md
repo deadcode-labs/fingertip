@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- The app no longer uses CPU while idle. Hidden, the edge indicator kept rendering its shader every frame (about 10% CPU, more the longer the app ran), and the toast kept animating its icon when it faded out on "Thinking…". The hidden windows now drop their SwiftUI content and get it back when they show again.
+
 ## [0.7.0] - 2026-11-06
 
 ### Added
