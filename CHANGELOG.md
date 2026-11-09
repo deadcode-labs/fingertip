@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-09
+
 ### Changed
 - MCP actions return only what changed on screen since the previous reply, the aliases that are gone, or `No changes since reading N.`, instead of the whole screen every time. Elements not listed keep their number under the new reading. The whole screen still goes out on `read_screen`, on `connect`, after a `skeleton` read, when the app changes, and when half the elements or more changed. Whole screens were 96 % of the tokens fingertip spent in an agent's context; on a Calculator run each tap went from ~1,500 characters to 300–400.
 - MCP action replies leave out the frame `(x,y wxh)` of elements with an alias; `read_screen` still shows every frame, and elements without an alias keep theirs. Frames were a third of the tokens of action replies.
@@ -156,7 +158,8 @@ First release. fingertip lets an agent see and drive an iOS simulator or a macOS
 ### Removed
 - `MaestroDriver`, the XCUITest hierarchy parsing and Maestro as a dependency.
 
-[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/deadcode-labs/fingertip/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/deadcode-labs/fingertip/compare/v0.8.1...v0.9.0
 [0.8.1]: https://github.com/deadcode-labs/fingertip/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/deadcode-labs/fingertip/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/deadcode-labs/fingertip/compare/v0.6.0...v0.7.0
