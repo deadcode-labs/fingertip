@@ -642,15 +642,24 @@ final class Session {
         let body: String
     }
 
-    /// Lines keyed by alias (`@N`), or by the line itself for an element without one.
+    /// Lines keyed by alias (`@N`), or by region and line for an element without one,
+    /// numbered when several such elements read the same.
     private struct Shown {
         let app: String?
         let reading: Int
         let lines: [String: ShownLine]
     }
 
-    private func key(_ element: UIElement, _ body: String) -> String {
-        element.alias.map { "@\($0)" } ?? "\(element.region)\n\(body)"
+    /// The comparison key and body of each element, in screen order.
+    private func keyed(_ elements: [UIElement]) -> [(key: String, body: String)] {
+        var seen: [String: Int] = [:]
+        return elements.map { element in
+            let body = line(element, full: true, alias: false, frame: false)
+            if let alias = element.alias { return ("@\(alias)", body) }
+            let base = "\(element.region)\n\(body)"
+            seen[base, default: 0] += 1
+            return (seen[base]! == 1 ? base : "\(base)\n\(seen[base]!)", body)
+        }
     }
 
     /// The same format as sim-use's outline, which is what reads best. After an action it
@@ -672,9 +681,8 @@ final class Session {
         var current: Shown?
         if !skeleton && focusRegion == nil {
             var shownLines: [String: ShownLine] = [:]
-            for element in inspector.elements {
-                let body = line(element, full: true, alias: false, frame: false)
-                shownLines[key(element, body)] = ShownLine(region: element.region, body: body)
+            for (element, keyed) in zip(inspector.elements, keyed(inspector.elements)) {
+                shownLines[keyed.key] = ShownLine(region: element.region, body: keyed.body)
             }
             current = Shown(app: inspector.appPackage, reading: inspector.reading, lines: shownLines)
         }
@@ -713,10 +721,10 @@ final class Session {
         }
         guard 2 * (changed.count + gone.count) < current.lines.count else { return nil }
         var lines = ["Only what changed since reading \(previous.reading). Every other element is as listed then and keeps its number: use @\(current.reading):N. `read_screen` lists the whole screen, with frames."]
+        let listed = zip(inspector.elements, keyed(inspector.elements))
+            .filter { changed[$0.1.key] != nil }.map(\.0)
         for region in inspector.regions {
-            let members = inspector.elements(in: region).filter { element in
-                changed[key(element, line(element, full: true, alias: false, frame: false))] != nil
-            }
+            let members = listed.filter { $0.region == region }
             guard !members.isEmpty else { continue }
             lines.append("[\(region)]")
             lines += members.map { line($0, full: false, frame: false) }
@@ -792,7 +800,8 @@ final class Session {
         await inspector.bringToFront(window: window)
         if let failure = inspector.failure { return .error(failure) }
         focusRegion = nil
-        return .text(outline())
+        // Another window is another screen: its reading goes out whole, as `read_screen` gives it.
+        return .text(outline(whole: true))
     }
 
     // MARK: - Actions
