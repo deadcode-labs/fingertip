@@ -29,6 +29,7 @@ final class OverlayWindowController {
         isShown = true
         let window = window ?? makeWindow()
         self.window = window
+        if window.contentView == nil { window.contentView = NSHostingView(rootView: IndicatorShaderView()) }
         window.alphaValue = 0
         window.orderFrontRegardless()
         NSAnimationContext.runAnimationGroup { context in
@@ -48,6 +49,9 @@ final class OverlayWindowController {
             }
             guard !isShown else { return }
             window.orderOut(nil)
+            // Ordered out, the window still runs its SwiftUI content: the shader's
+            // TimelineView would keep rendering every frame. `show` puts it back.
+            window.contentView = nil
         }
     }
 
@@ -63,7 +67,6 @@ final class OverlayWindowController {
         window.level = .statusBar
         window.ignoresMouseEvents = true
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
-        window.contentView = NSHostingView(rootView: IndicatorShaderView())
         return window
     }
 }
