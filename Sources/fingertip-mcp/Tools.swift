@@ -137,7 +137,7 @@ final class Session {
             ),
             Tool(
                 name: "wait_for",
-                description: "Waits inside the server, without handing the turn back, for an element whose text, label or #identifier contains `text` (ignoring case and accents), and returns the screen as soon as it appears. Checks every ~0.25 s. With `tap: true` it taps it on the spot: the way to catch something short-lived, like an approval card. With `gone: true` it waits for it to disappear (e.g. a «Working…»). If several match, an exact match wins and, among those, a button.",
+                description: "Waits inside the server, without handing the turn back, for an element whose text, label or #identifier contains `text` (ignoring case and accents), and returns what changed on screen as soon as it appears. Checks every ~0.25 s. With `tap: true` it taps it on the spot: the way to catch something short-lived, like an approval card. With `gone: true` it waits for it to disappear (e.g. a «Working…»). If several match, an exact match wins and, among those, a button.",
                 properties: [
                     "text": ["type": "string"],
                     "tap": ["type": "boolean", "description": "Tap it as soon as it appears."],
@@ -149,7 +149,7 @@ final class Session {
             ),
             Tool(
                 name: "tap",
-                description: "Taps an element by its alias `@L:N` (preferred) or by coordinates `x`,`y` in the reading's space (frames come in `read_screen`). It re-reads the screen before tapping: if anything up to that element changed, it does not tap and returns the new screen to choose again. Returns what changed on screen. On a text field, a tap gives it focus: then use `type_text`. On macOS, tapping a pop-up opens its menu and the reading lists its items in the «Menú» region (`Mode › Scientific`); tapping one picks it, and tapping the pop-up again closes it. The «Delivery» line says what was tried and what was verified: `no effect` means the app took the action and nothing changed.",
+                description: "Taps an element by its alias `@L:N` (preferred) or by coordinates `x`,`y` in the reading's space (frames come in `read_screen`). It re-reads the screen before tapping: if anything up to that element changed, it does not tap and returns what changed, to choose again. Returns what changed on screen. On a text field, a tap gives it focus: then use `type_text`. On macOS, tapping a pop-up opens its menu and the reading lists its items in the «Menú» region (`Mode › Scientific`); tapping one picks it, and tapping the pop-up again closes it. The «Delivery» line says what was tried and what was verified: `no effect` means the app took the action and nothing changed.",
                 properties: [
                     "alias": ["type": "string", "description": "The full alias, as it appears in the reading: `12:5` is element 5 of reading 12."],
                     "x": ["type": "number"],
@@ -553,6 +553,8 @@ final class Session {
             return .error(ToolError.notConnected("No device connected and \(booted.count) simulators are booted: use `list_targets` and `connect`."))
         }
         let result = await connect(to: .simulator(udid: booted[0].udid))
+        // The agent never sees this connect reply, so its screen is no base to compare with.
+        shown = nil
         return result.isError ? result : nil
     }
 
@@ -671,7 +673,7 @@ final class Session {
         if !skeleton && focusRegion == nil {
             var shownLines: [String: ShownLine] = [:]
             for element in inspector.elements {
-                let body = line(element, full: false, alias: false, frame: false)
+                let body = line(element, full: true, alias: false, frame: false)
                 shownLines[key(element, body)] = ShownLine(region: element.region, body: body)
             }
             current = Shown(app: inspector.appPackage, reading: inspector.reading, lines: shownLines)
@@ -713,7 +715,7 @@ final class Session {
         var lines = ["Only what changed since reading \(previous.reading). Every other element is as listed then and keeps its number: use @\(current.reading):N. `read_screen` lists the whole screen, with frames."]
         for region in inspector.regions {
             let members = inspector.elements(in: region).filter { element in
-                changed[key(element, line(element, full: false, alias: false, frame: false))] != nil
+                changed[key(element, line(element, full: true, alias: false, frame: false))] != nil
             }
             guard !members.isEmpty else { continue }
             lines.append("[\(region)]")
@@ -724,7 +726,7 @@ final class Session {
         if !goneAliases.isEmpty {
             lines.append("Gone: " + goneAliases.map { "@\(previous.reading):\($0)" }.joined(separator: ", "))
         }
-        lines += gone.filter { !$0.key.hasPrefix("@") }.map { "Gone: [\($0.value.region)] \($0.value.body)" }
+        lines += gone.filter { !$0.key.hasPrefix("@") }.map { "Gone: [\($0.value.region)] \(Self.clipped($0.value.body))" }
         return lines
     }
 
