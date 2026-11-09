@@ -149,7 +149,7 @@ final class Session {
             ),
             Tool(
                 name: "tap",
-                description: "Taps an element by its alias `@L:N` (preferred) or by coordinates `x`,`y` in the reading's space. It re-reads the screen before tapping: if anything up to that element changed, it does not tap and returns the new screen to choose again. Returns what changed on screen. On a text field, a tap gives it focus: then use `type_text`. On macOS, tapping a pop-up opens its menu and the reading lists its items in the «Menú» region (`Mode › Scientific`); tapping one picks it, and tapping the pop-up again closes it. The «Delivery» line says what was tried and what was verified: `no effect` means the app took the action and nothing changed.",
+                description: "Taps an element by its alias `@L:N` (preferred) or by coordinates `x`,`y` in the reading's space (frames come in `read_screen`). It re-reads the screen before tapping: if anything up to that element changed, it does not tap and returns the new screen to choose again. Returns what changed on screen. On a text field, a tap gives it focus: then use `type_text`. On macOS, tapping a pop-up opens its menu and the reading lists its items in the «Menú» region (`Mode › Scientific`); tapping one picks it, and tapping the pop-up again closes it. The «Delivery» line says what was tried and what was verified: `no effect` means the app took the action and nothing changed.",
                 properties: [
                     "alias": ["type": "string", "description": "The full alias, as it appears in the reading: `12:5` is element 5 of reading 12."],
                     "x": ["type": "number"],
@@ -654,7 +654,9 @@ final class Session {
     /// The same format as sim-use's outline, which is what reads best. After an action it
     /// lists only the elements that changed since the previous outline: three quarters of
     /// the tokens an agent spends on fingertip were whole screens, a fifth of them identical
-    /// to the one before. `whole` (a `read_screen`) always lists everything.
+    /// to the one before. `whole` (a `read_screen`) always lists everything. Only `whole`
+    /// shows the frame of an element with an alias: frames were a third of those tokens,
+    /// and a tap after an action goes by alias.
     private func outline(full: Bool = false, skeleton: Bool = false, whole: Bool = false) -> String {
         let size = inspector.screenSize
         var lines = ["App: \(inspector.appLabel ?? "?") (\(inspector.appPackage ?? "?"))  \(Int(size.width))x\(Int(size.height))  · reading \(inspector.reading)"]
@@ -669,7 +671,7 @@ final class Session {
         if !skeleton && focusRegion == nil {
             var shownLines: [String: ShownLine] = [:]
             for element in inspector.elements {
-                let body = line(element, full: false, alias: false)
+                let body = line(element, full: false, alias: false, frame: false)
                 shownLines[key(element, body)] = ShownLine(region: element.region, body: body)
             }
             current = Shown(app: inspector.appPackage, reading: inspector.reading, lines: shownLines)
@@ -686,7 +688,7 @@ final class Session {
                 lines.append("[\(region)] \(members.count) elements")
             } else {
                 lines.append("[\(region)]")
-                lines += members.map { line($0, full: full) }
+                lines += members.map { line($0, full: full, frame: whole) }
             }
         }
         if inspector.elements.isEmpty { lines.append("(no elements)") }
@@ -708,14 +710,14 @@ final class Session {
             return ["No changes since reading \(previous.reading)."]
         }
         guard 2 * (changed.count + gone.count) < current.lines.count else { return nil }
-        var lines = ["Only what changed since reading \(previous.reading). Every other element is as listed then and keeps its number: use @\(current.reading):N. `read_screen` lists the whole screen."]
+        var lines = ["Only what changed since reading \(previous.reading). Every other element is as listed then and keeps its number: use @\(current.reading):N. `read_screen` lists the whole screen, with frames."]
         for region in inspector.regions {
             let members = inspector.elements(in: region).filter { element in
-                changed[key(element, line(element, full: false, alias: false))] != nil
+                changed[key(element, line(element, full: false, alias: false, frame: false))] != nil
             }
             guard !members.isEmpty else { continue }
             lines.append("[\(region)]")
-            lines += members.map { line($0, full: false) }
+            lines += members.map { line($0, full: false, frame: false) }
         }
         let goneAliases = gone.keys.filter { $0.hasPrefix("@") }
             .compactMap { Int($0.dropFirst()) }.sorted()
@@ -726,14 +728,15 @@ final class Session {
         return lines
     }
 
-    private func line(_ element: UIElement, full: Bool, alias: Bool = true) -> String {
+    /// `frame: false` leaves out the frame of an element with an alias; one without an alias keeps it.
+    private func line(_ element: UIElement, full: Bool, alias: Bool = true, frame: Bool = true) -> String {
         let show: (String) -> String = full ? { $0 } : { Self.clipped($0) }
         var parts = alias ? [element.alias.map { "@\(inspector.reading):\($0)" } ?? "--", element.type] : [element.type]
         if let label = element.label { parts.append("\"\(show(label))\"") }
         if let text = element.text { parts.append(element.label == nil ? "\"\(show(text))\"" : "= \"\(show(text))\"") }
         if let identifier = element.identifier { parts.append("#\(identifier)") }
         let b = element.bounds
-        parts.append("(\(Int(b.minX)),\(Int(b.minY)) \(Int(b.width))x\(Int(b.height)))")
+        if frame || element.alias == nil { parts.append("(\(Int(b.minX)),\(Int(b.minY)) \(Int(b.width))x\(Int(b.height)))") }
         if !element.isEnabled { parts.append("[deshabilitado]") }
         if let checked = element.isChecked { parts.append(checked ? "[marcado]" : "[desmarcado]") }
         return "  " + parts.joined(separator: "  ")

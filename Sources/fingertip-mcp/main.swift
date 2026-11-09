@@ -38,7 +38,7 @@ let server = MCPServer(
     Manually test an iOS simulator or a macOS app: read the screen, tap, type, scroll and verify. \
     Typical flow: `list_targets` → `connect` → `relaunch_app` for a clean start → `read_screen` → actions \
     (each returns only what changed on screen; unlisted elements keep their number under the new \
-    reading, and `read_screen` returns the whole screen) → `screenshot` to check visuals. `@L:N` \
+    reading, and `read_screen` returns the whole screen with frames) → `screenshot` to check visuals. `@L:N` \
     aliases carry the reading number: `tap` refuses one if the screen changed before that element. On dense screens, \
     `read_screen` with `skeleton` and then `region`. Every error carries a code and `retry_safe`. \
     `run_instruction` delegates a whole instruction to Jev.
