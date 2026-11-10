@@ -55,6 +55,8 @@ nonisolated enum MacDriverError: FingertipError {
     case mouseButtonHeld
     /// `bring_to_front` asked for the window and it did not end up in front within 2 s.
     case notBroughtForward(String)
+    /// The app didn't answer Accessibility within the messaging timeout: its main thread is busy.
+    case notResponding(String)
 
     var code: String {
         switch self {
@@ -85,6 +87,7 @@ nonisolated enum MacDriverError: FingertipError {
         case .notClickable: "not_clickable"
         case .mouseButtonHeld: "mouse_button_held"
         case .notBroughtForward: "not_brought_forward"
+        case .notResponding: "app_not_responding"
         }
     }
 
@@ -93,7 +96,7 @@ nonisolated enum MacDriverError: FingertipError {
     /// visible effect is not safe either: the effect may just be late.
     var retrySafe: Bool {
         switch self {
-        case .unknownAlias, .staleAlias, .noWindow, .captureFailed: true
+        case .unknownAlias, .staleAlias, .noWindow, .captureFailed, .notResponding: true
         case .menuAlreadyOpen, .optionNotFound, .notSettable, .invalidValue, .wrongElement,
              .ambiguousWindow, .unknownWindow, .windowGone, .windowOnOtherSpace, .notClickable, .mouseButtonHeld: true
         // A menu that opened late was cancelled (`openMenu`). What is not safe is a step that
@@ -158,6 +161,8 @@ nonisolated enum MacDriverError: FingertipError {
             "Window \(window.caption) is on another desktop and Accessibility can't reach it from here. Bring it over with `bring_to_front` (if allowed in Fingertip → Settings → General), or switch to that desktop and read again."
         case .notBroughtForward(let window):
             "Asked to bring window \(window) to the front and it wasn't in front within 2 s (the app doesn't list it in its Window menu, or has another with the same title). Switch to its desktop by hand and read again."
+        case .notResponding(let name):
+            "\(name) didn't answer Accessibility within 2 s: its main thread is busy or hung, so its windows can't be read or brought forward. Nothing was touched. Read again in a moment; if it keeps failing, the app itself is stuck (`sample` its process to see where)."
         case .windowGone(let detail):
             "The chosen window is gone (\(detail)). Choose another with `list_windows`."
         }
