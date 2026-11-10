@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- A Mac app that doesn't answer Accessibility (its main thread busy or hung) fails with `app_not_responding` instead of `no_window`. The timeout was read as an app without windows, so `list_windows` marked its window as on another desktop and `bring_to_front` blamed the Window menu, sending the agent after a window problem that wasn't there.
+
 ## [0.9.0] - 2026-11-09
 
 ### Changed

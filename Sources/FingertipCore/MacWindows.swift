@@ -39,6 +39,16 @@ extension MacDriver {
     /// agent could never see the alert it is stuck on.
     private static let modalSubroles: Set<String> = ["AXDialog", "AXSystemDialog"]
 
+    /// The app's windows on the Spaces on screen. A timeout is not an app without windows: an app
+    /// whose main thread is stuck answers nothing, and reading that as "no window" sends the agent
+    /// looking for a window that is there.
+    func windows(of root: AXUIElement, app: NSRunningApplication) throws -> [AXUIElement] {
+        var value: CFTypeRef?
+        let result = AXUIElementCopyAttributeValue(root, "AXWindows" as CFString, &value)
+        if result == .cannotComplete { throw MacDriverError.notResponding(app.localizedName ?? bundleID) }
+        return value as? [AXUIElement] ?? []
+    }
+
     static func windowNumber(_ window: AXUIElement) -> CGWindowID? {
         var number: CGWindowID = 0
         guard axWindowNumber(window, &number) == .success, number != 0 else { return nil }
@@ -53,7 +63,7 @@ extension MacDriver {
     /// a check made while an action runs must leave that to the reading after it, which is
     /// where the caller learns of it.
     func targetWindow(root: AXUIElement, app: NSRunningApplication, forgetGone: Bool = true) throws -> AXUIElement {
-        let windows: [AXUIElement] = Self.attribute(root, "AXWindows") ?? []
+        let windows = try windows(of: root, app: app)
         let focused: AXUIElement? = Self.attribute(root, "AXFocusedWindow")
         if let focused, let subrole: String = Self.attribute(focused, "AXSubrole"), Self.modalSubroles.contains(subrole) {
             return focused
@@ -92,7 +102,7 @@ extension MacDriver {
         guard let app = runningApp() else { throw MacDriverError.notRunning(bundleID) }
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 2)
-        let windows: [AXUIElement] = Self.attribute(root, "AXWindows") ?? []
+        let windows = try windows(of: root, app: app)
         let focused = (Self.attribute(root, "AXFocusedWindow") as AXUIElement?).flatMap(Self.windowNumber)
         return windows.compactMap { info(of: $0, focused: focused) }
             + otherSpaceWindows(app: app, listed: windows, focused: focused)
@@ -102,7 +112,7 @@ extension MacDriver {
         guard let app = runningApp() else { throw MacDriverError.notRunning(bundleID) }
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 2)
-        let windows: [AXUIElement] = Self.attribute(root, "AXWindows") ?? []
+        let windows = try windows(of: root, app: app)
         guard Self.reachable(CGWindowID(number), windows: windows, root: root) != nil else {
             if let elsewhere = otherSpaceWindows(app: app, listed: windows, focused: nil)
                 .first(where: { $0.number == number }) {
@@ -130,7 +140,7 @@ extension MacDriver {
         guard let app = runningApp() else { throw MacDriverError.notRunning(bundleID) }
         let root = AXUIElementCreateApplication(app.processIdentifier)
         AXUIElementSetMessagingTimeout(root, 2)
-        let windows: [AXUIElement] = Self.attribute(root, "AXWindows") ?? []
+        let windows = try windows(of: root, app: app)
         let number: CGWindowID
         if let requested {
             number = CGWindowID(requested)
