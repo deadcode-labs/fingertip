@@ -55,10 +55,35 @@ nonisolated enum ClaudeMCPInstaller {
         arguments += ["--", mcpPath]
 
         let (status, output) = run(URL(fileURLWithPath: claudePath), arguments)
-        if status == 0 {
-            return Result(succeeded: true, message: String(localized: "Registered: \(mcpPath)"))
+        guard status == 0 else {
+            return Result(succeeded: false, message: String(localized: "Failed (\(status)): \(output)"))
         }
-        return Result(succeeded: false, message: String(localized: "Failed (\(status)): \(output)"))
+        // The skill teaches Claude Code how to run a test with these tools; it is installed
+        // with the server so each version of the app brings the one that matches its tools.
+        if let skillError = installSkill() {
+            return Result(succeeded: false, message: String(localized: "Registered: \(mcpPath), but the skill was not installed: \(skillError)"))
+        }
+        return Result(succeeded: true, message: String(localized: "Registered: \(mcpPath)"))
+    }
+
+    /// Copies the bundled `SKILL.md` to `~/.claude/skills/fingertip/`, replacing the one there.
+    /// Returns what went wrong, or nil when it was copied.
+    static func installSkill() -> String? {
+        guard let source = Bundle.main.url(forResource: "SKILL", withExtension: "md") else {
+            return "SKILL.md is missing from the app bundle."
+        }
+        let folder = FileManager.default.homeDirectoryForCurrentUser.appending(path: ".claude/skills/fingertip")
+        let destination = folder.appending(path: "SKILL.md")
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            if FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.removeItem(at: destination)
+            }
+            try FileManager.default.copyItem(at: source, to: destination)
+            return nil
+        } catch {
+            return error.localizedDescription
+        }
     }
 
     /// The native installer puts `claude` in ~/.local/bin and adds that to PATH in .zshrc,

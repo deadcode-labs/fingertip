@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- A Claude Code skill, `fingertip`, on how to run a manual test with these tools: connect to the build being changed (the worktree's `app_path`), choose a window once, read little, answer `screen_changed` with the new alias, wait in the server, tap by coordinates only for a real click or a view without Accessibility, and close with `end_test` notes a reviewer can check. Settings → Claude Code → Install / Update and the onboarding install it in `~/.claude/skills/fingertip/` together with the server. It comes from 2054 fingertip calls over 48 sessions, where most avoidable errors were `ambiguous_window`, `no_window` and `app_not_running` right after launching.
+
 ### Fixed
 - A Mac app that doesn't answer Accessibility (its main thread busy or hung) fails with `app_not_responding` instead of `no_window`. The timeout was read as an app without windows, so `list_windows` marked its window as on another desktop and `bring_to_front` blamed the Window menu, sending the agent after a window problem that wasn't there.
 
