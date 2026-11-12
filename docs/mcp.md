@@ -35,6 +35,7 @@ Tools: `list_targets`, `connect` (`udid` or `bundle_id` [+ `app_path`, `test`]),
 Two registrations share the name `fingertip`, and Claude Code uses the narrower scope:
 
 - **User scope → the installed app.** Fingertip's Settings → Claude Code → Install / Update runs `claude mcp add --scope user` with the `fingertip-mcp` bundled in the app it is running from, so press it from `/Applications/Fingertip.app`: pressed from an app launched by Xcode, it registers a path inside DerivedData, and later updates to the installed app no longer reach Claude Code. A Sparkle update replaces the bundled binary in place, so it only needs `/mcp` → reconnect.
+- **The skill goes with the user-scope registration.** The same Install / Update copies `App/Fingertip/Skill/SKILL.md`, bundled in the app, to `~/.claude/skills/fingertip/SKILL.md`, replacing the one there, so each version of the app brings the skill that matches its tools. It is the workflow (connect to the right build, read little, wait in the server, close with evidence), not the tool reference: what each argument does stays in the tool descriptions. A Sparkle update doesn't rewrite it; Install / Update does. A registration that worked with a skill that failed to copy reports both.
 - **Local scope → the development build**, in this repo only, so sessions here run the code being changed. Not in a shared `.mcp.json`, because the command is an absolute path into `.build/`:
 
 ```bash

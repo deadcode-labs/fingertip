@@ -849,6 +849,16 @@
         }
       }
     },
+    "Registered: %@, but the skill was not installed: %@": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrado: %1$@, pero la skill no se instaló: %2$@"
+          }
+        }
+      }
+    },
     "Registering…": {
       "localizations": {
         "es": {

@@ -23,7 +23,7 @@ It runs as **`fingertip-mcp`**, an MCP server, so Claude Code — or any other M
 
 ### With the Fingertip app
 
-Download `Fingertip.dmg` from the [latest release](https://github.com/deadcode-labs/fingertip/releases/latest), drag Fingertip to Applications and open it. The first launch walks through setup: it checks Xcode and sim-use (and installs sim-use through Homebrew), registers the MCP in Claude Code and points at the Mac permissions. The app lives in the menu bar: in **Settings… → Claude Code → Install / Update** it registers the bundled `fingertip-mcp` in Claude Code at user scope. Then reconnect with `/mcp`. The app updates itself through Sparkle (menu bar → **Check for Updates…**, or on its own once a day); the update carries the bundled `fingertip-mcp`, so reconnect with `/mcp` after it.
+Download `Fingertip.dmg` from the [latest release](https://github.com/deadcode-labs/fingertip/releases/latest), drag Fingertip to Applications and open it. The first launch walks through setup: it checks Xcode and sim-use (and installs sim-use through Homebrew), registers the MCP in Claude Code and points at the Mac permissions. The app lives in the menu bar: in **Settings… → Claude Code → Install / Update** it registers the bundled `fingertip-mcp` in Claude Code at user scope and installs the `fingertip` skill, which tells Claude how to run a test with the tools, in `~/.claude/skills/fingertip/`. Then reconnect with `/mcp`. The app updates itself through Sparkle (menu bar → **Check for Updates…**, or on its own once a day); the update carries the bundled `fingertip-mcp`, so reconnect with `/mcp` after it.
 
 While it runs, the app shows what the agent is doing: an edge indicator, a status toast, and a ghost pointer over the element a Mac action touches (your real cursor never moves).
 
@@ -34,6 +34,7 @@ git clone https://github.com/deadcode-labs/fingertip.git
 cd fingertip
 swift build -c release
 claude mcp add --scope user fingertip -- "$PWD/.build/release/fingertip-mcp"
+mkdir -p ~/.claude/skills/fingertip && cp App/Fingertip/Skill/SKILL.md ~/.claude/skills/fingertip/
 ```
 
 ### In other MCP clients
